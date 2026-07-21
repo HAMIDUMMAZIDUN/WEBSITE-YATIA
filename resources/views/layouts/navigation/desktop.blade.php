@@ -163,7 +163,7 @@
             </div>
 
             {{-- Group: Sistem --}}
-            <div x-data="{ open: {{ request()->routeIs('admin.users.*') ? 'true' : 'false' }} }" class="space-y-1">
+            <div x-data="{ open: {{ request()->routeIs('admin.users.*', 'admin.integrasi.*') ? 'true' : 'false' }} }" class="space-y-1">
                 <button @click="open = !open" class="flex items-center justify-between w-full rounded-xl text-xs font-semibold transition-all duration-200 gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white">
                     <div class="flex items-center gap-3">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,6 +176,7 @@
                     </svg>
                 </button>
                 <div x-show="open" x-transition class="pl-7 pr-1 space-y-1">
+                    <a href="{{ route('admin.integrasi.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.integrasi.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Integrasi DB MTs</a>
                     <a href="{{ route('admin.users.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.users.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Pengguna & Hak Akses</a>
                     <a href="#system-logs" class="block px-3 py-2 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800">Log Aktivitas</a>
                     <a href="#system-reports" class="block px-3 py-2 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800">Laporan Audit</a>
@@ -297,6 +298,7 @@
                     <span class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 block cursor-default">📁</span>
                     <div class="absolute left-full ml-2 py-2 px-3 bg-slate-900 text-white text-xs rounded-xl shadow-xl hidden group-hover:block whitespace-nowrap z-50 space-y-1">
                         <span class="font-bold text-[10px] uppercase text-emerald-400 block border-b border-slate-800 pb-1 mb-1">Master & Config</span>
+                        <a href="{{ route('admin.integrasi.index') }}" class="block hover:text-emerald-300">Integrasi DB MTs</a>
                         <a href="{{ route('admin.profil.index') }}" class="block hover:text-emerald-300">Profil Madrasah</a>
                         <a href="{{ route('admin.tahun_ajaran.index') }}" class="block hover:text-emerald-300">Tahun Ajaran</a>
                         <a href="{{ route('admin.holidays.index') }}" class="block hover:text-emerald-300">Kalender Libur</a>

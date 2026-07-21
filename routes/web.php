@@ -34,6 +34,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/guru/{id}/toggle-status', [DashboardController::class, 'toggleGuruStatus'])->name('admin.guru.toggle_status');
     Route::get('/admin/profil-madrasah', [DashboardController::class, 'profilMadrasahIndex'])->name('admin.profil.index');
     Route::post('/admin/profil-madrasah', [DashboardController::class, 'updateProfilMadrasah'])->name('admin.profil.update');
+    
+    // MTs Database Integration Routes
+    Route::get('/admin/integrasi-mts', [\App\Http\Controllers\MtsIntegrationController::class, 'index'])->name('admin.integrasi.index');
+    Route::post('/admin/integrasi-mts/sync', [\App\Http\Controllers\MtsIntegrationController::class, 'sync'])->name('admin.integrasi.sync');
+
     Route::get('/admin/kelas', [DashboardController::class, 'kelasIndex'])->name('admin.kelas.index');
     Route::post('/admin/kelas', [DashboardController::class, 'storeKelas'])->name('admin.kelas.store');
     Route::patch('/admin/kelas/{id}', [DashboardController::class, 'updateKelas'])->name('admin.kelas.update');
