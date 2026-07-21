@@ -1,0 +1,205 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-2xl text-slate-800 leading-tight">
+                {{ __('Manajemen Pengguna (Users & RBAC)') }}
+            </h2>
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold shadow transition-colors flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Print Laporan
+                </button>
+            </div>
+        </div>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editUser: { id: '', name: '', email: '', role_id: '' } }">
+            <!-- Toast Notifications -->
+            @if(session('success'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
+                    <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-sm font-semibold">{{ session('success') }}</span>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-3">
+                    <svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-sm font-semibold">{{ session('error') }}</span>
+                </div>
+            @endif
+
+            <!-- Content Grid -->
+            <div class="grid lg:grid-cols-12 gap-8 items-start">
+                <!-- Users Table -->
+                <div class="lg:col-span-8 space-y-8">
+                    <div id="users-section" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-6">
+                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="font-bold text-lg text-slate-900">Daftar Pengguna Aktif</h3>
+                            <span class="px-3 py-1 rounded bg-slate-100 text-slate-600 font-semibold text-xs uppercase tracking-wider">Tabel Pengguna</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-6 py-3">Nama</th>
+                                        <th class="px-6 py-3">Email</th>
+                                        <th class="px-6 py-3">Hak Akses</th>
+                                        <th class="px-6 py-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($users as $usr)
+                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                            <td class="px-6 py-4 font-semibold text-slate-900">{{ $usr->name }}</td>
+                                            <td class="px-6 py-4">{{ $usr->email }}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider 
+                                                    {{ $usr->role->name === 'super_admin' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                    {{ $usr->role->name === 'guru' ? 'bg-blue-100 text-blue-700' : '' }}
+                                                    {{ $usr->role->name === 'wali_kelas' ? 'bg-amber-100 text-amber-700' : '' }}
+                                                    {{ $usr->role->name === 'siswa' ? 'bg-purple-100 text-purple-700' : '' }}
+                                                    {{ $usr->role->name === 'guru_bk' ? 'bg-rose-100 text-rose-700' : '' }}
+                                                    {{ $usr->role->name === 'wali_kelas_guru' ? 'bg-indigo-100 text-indigo-700' : '' }}
+                                                ">
+                                                    {{ $usr->role->display_name }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="flex items-center justify-center gap-3">
+                                                    <button 
+                                                        @click="
+                                                            editUser = { 
+                                                                id: '{{ $usr->id }}', 
+                                                                name: '{{ addslashes($usr->name) }}', 
+                                                                email: '{{ addslashes($usr->email) }}', 
+                                                                role_id: '{{ $usr->role_id }}' 
+                                                            }; 
+                                                            editModalOpen = true;
+                                                        "
+                                                        class="text-blue-600 hover:text-blue-800 font-semibold text-xs transition-colors"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    @if($usr->id !== Auth::id())
+                                                        <form action="{{ route('admin.users.delete', $usr->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-rose-600 hover:text-rose-800 font-semibold text-xs transition-colors">Hapus</button>
+                                                        </form>
+                                                    @else
+                                                        <span class="text-slate-400 text-xs">-</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forms Area (Sidebar) -->
+                <div class="lg:col-span-4 space-y-8">
+                    <!-- Form Tambah User -->
+                    <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                        <h3 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            Tambah User Baru
+                        </h3>
+                        <form action="{{ route('admin.users.store') }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
+                                <input type="text" name="name" required placeholder="Ahmad Yani" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Email</label>
+                                <input type="email" name="email" required placeholder="user@gmail.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                                <input type="password" name="password" required placeholder="******" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Peran (Role)</label>
+                                <select name="role_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                    @foreach($roles as $rl)
+                                        <option value="{{ $rl->id }}">{{ $rl->display_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-colors">
+                                Simpan User
+                            </button>
+                        </form>
+                        <!-- Import/Export section -->
+                        <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Import / Export Masal</span>
+                            <div class="flex gap-2">
+                                <a href="{{ route('data.template', 'users') }}" class="flex-1 text-center py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-150 transition-colors">
+                                    Template
+                                </a>
+                                <a href="{{ route('data.export', 'users') }}" class="flex-1 text-center py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-150 transition-colors">
+                                    Ekspor CSV
+                                </a>
+                            </div>
+                            <form action="{{ route('data.import', 'users') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                                @csrf
+                                <input type="file" name="file" required class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                                <button type="submit" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-colors flex-shrink-0">
+                                    Unggah
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit User Modal -->
+            <div x-show="editModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+                <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100" @click.away="editModalOpen = false">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-lg text-slate-900">Ubah Pengguna (Edit User)</h3>
+                        <button @click="editModalOpen = false" class="text-slate-400 hover:text-slate-650 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <form :action="'/admin/users/' + editUser.id" method="POST" class="p-6 space-y-4">
+                        @csrf
+                        @method('PATCH')
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
+                            <input type="text" name="name" required x-model="editUser.name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Email</label>
+                            <input type="email" name="email" required x-model="editUser.email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Password Baru (Kosongkan jika tidak diubah)</label>
+                            <input type="password" name="password" placeholder="******" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Peran (Role)</label>
+                            <select name="role_id" required x-model="editUser.role_id" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                @foreach($roles as $rl)
+                                    <option value="{{ $rl->id }}">{{ $rl->display_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" @click="editModalOpen = false" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
+                                Batal
+                            </button>
+                            <button type="submit" class="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-colors">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
