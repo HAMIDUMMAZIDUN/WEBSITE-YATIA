@@ -72,6 +72,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'hamidabdulaziz36@gmail.com'],
             [
                 'name' => 'Hamid Abdul Aziz',
+                'nik' => '3204461404040001',
                 'password' => Hash::make('hamidun123'),
                 'role_id' => $superAdminRole->id,
             ]
@@ -81,6 +82,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'hidayat@gmail.com'],
             [
                 'name' => 'hidayat',
+                'nik' => 'hidayat',
                 'password' => Hash::make('hamidun123'),
                 'role_id' => $superAdminRole->id,
             ]
@@ -231,6 +233,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => $name,
+                    'nik' => $nik,
                     'password' => Hash::make($pwdPlain),
                     'role_id' => $guruRole->id,
                 ]
@@ -308,6 +311,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => "siswa$i@gmail.com"],
                 [
                     'name' => $name,
+                    'nik' => 'NIS' . str_pad($i, 5, '0', STR_PAD_LEFT),
                     'password' => Hash::make('hamidun123'),
                     'role_id' => $siswaRole->id,
                 ]

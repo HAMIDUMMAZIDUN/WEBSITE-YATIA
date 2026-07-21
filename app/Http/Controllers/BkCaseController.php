@@ -55,7 +55,7 @@ class BkCaseController extends Controller
             ->orderBy('opened_at', 'desc')
             ->get();
 
-        return view('dashboard.bk_triase', [
+        return view('dashboard.bk.bk_triase', [
             'referralsQueue' => $referralsQueue,
             'activeCases' => $activeCases,
         ]);
@@ -148,7 +148,7 @@ class BkCaseController extends Controller
             'entity_id' => $case->id,
         ]);
 
-        return view('dashboard.bk_case_detail', [
+        return view('dashboard.bk.bk_case_detail', [
             'case' => $case,
         ]);
     }

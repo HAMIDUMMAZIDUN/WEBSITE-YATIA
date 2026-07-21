@@ -139,7 +139,7 @@ class AttendanceDailyController extends Controller
             }
         }
 
-        return view('dashboard.absensi_input', [
+        return view('dashboard.absensi.absensi_input', [
             'kelas' => $kelas,
             'date' => $date,
             'siswas' => $siswas,

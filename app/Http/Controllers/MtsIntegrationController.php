@@ -69,7 +69,7 @@ class MtsIntegrationController extends Controller
             ->take(10)
             ->get();
 
-        return view('dashboard.integrasi_mts', compact(
+        return view('dashboard.admin.integrasi_mts', compact(
             'connected',
             'errorMessage',
             'externalCounts',
@@ -170,6 +170,12 @@ class MtsIntegrationController extends Controller
 
             $email = 'guru.' . $ex->guru_id . '@gmail.com';
 
+            // Derive NIK from NIP (primary login identifier for guru)
+            $nip = $ex->guru_nip ?? '';
+            $guruNik = (!empty($nip) && !str_starts_with($nip, 'NIP-'))
+                ? $nip
+                : ('G' . $ex->guru_id);
+
             $user = User::where('email', $email)->first();
             if (!$user) {
                 // Use bcrypt hash from RDM if available, otherwise default
@@ -179,12 +185,13 @@ class MtsIntegrationController extends Controller
 
                 $user = User::create([
                     'name' => $guruNama,
+                    'nik' => $guruNik,
                     'email' => $email,
                     'password' => $password,
                     'role_id' => $guruRole->id,
                 ]);
             } else {
-                $user->update(['name' => $guruNama]);
+                $user->update(['name' => $guruNama, 'nik' => $guruNik]);
             }
 
             $gender = (strtoupper((string) ($ex->guru_gender ?? '')) === 'P' || ($ex->guru_gender ?? '') === 'Perempuan') ? 'P' : 'L';
@@ -280,6 +287,10 @@ class MtsIntegrationController extends Controller
 
             $email = 'siswa.' . $ex->siswa_id . '@gmail.com';
 
+            // NIK for siswa = NIS (login identifier)
+            $siswaRawNis = ($ex->siswa_nis && $ex->siswa_nis != '0') ? (string) $ex->siswa_nis : null;
+            $siswaLoginNik = $siswaRawNis ?? ('S' . $ex->siswa_id);
+
             $user = User::where('email', $email)->first();
             if (!$user) {
                 // Use bcrypt hash only if it really is bcrypt
@@ -290,12 +301,13 @@ class MtsIntegrationController extends Controller
 
                 $user = User::create([
                     'name' => $displayName,
+                    'nik' => $siswaLoginNik,
                     'email' => $email,
                     'password' => $password,
                     'role_id' => $siswaRole->id,
                 ]);
             } else {
-                $user->update(['name' => $displayName]);
+                $user->update(['name' => $displayName, 'nik' => $siswaLoginNik]);
             }
 
             $kelasId = null;

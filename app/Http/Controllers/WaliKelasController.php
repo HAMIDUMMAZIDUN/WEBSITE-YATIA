@@ -56,7 +56,7 @@ class WaliKelasController extends Controller
     {
         $homeroom = $this->getActiveHomeroom();
         if (!$homeroom) {
-            return view('dashboard.wali_kelas_empty', [
+            return view('dashboard.wali_kelas.wali_kelas_empty', [
                 'message' => 'Anda saat ini tidak ditugaskan sebagai Wali Kelas pada tahun ajaran aktif.'
             ]);
         }
@@ -137,7 +137,7 @@ class WaliKelasController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard.wali_kelas', [
+        return view('dashboard.wali_kelas.wali_kelas', [
             'kelas' => $kelas,
             'totalSiswa' => $totalSiswa,
             'absensiPersen' => $absensiPersen,
@@ -197,7 +197,7 @@ class WaliKelasController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('dashboard.wali_siswa_360', [
+        return view('dashboard.wali_kelas.wali_siswa_360', [
             'siswa' => $siswa,
             'bkReferrals' => $bkReferrals,
             'totalPoinPelanggaran' => $totalPoinPelanggaran,
@@ -224,7 +224,7 @@ class WaliKelasController extends Controller
             ->orderBy('date', 'desc')
             ->get();
 
-        return view('dashboard.wali_absensi_verifikasi', [
+        return view('dashboard.wali_kelas.wali_absensi_verifikasi', [
             'kelas' => $kelas,
             'submissions' => $pendingSubmissions,
         ]);

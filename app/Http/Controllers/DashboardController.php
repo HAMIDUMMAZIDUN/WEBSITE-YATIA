@@ -109,7 +109,7 @@ class DashboardController extends Controller
             'mapel' => MataPelajaran::all(),
             'roles' => Role::all(),
         ];
-        return view('dashboard.super_admin', $data);
+        return view('dashboard.admin.super_admin', $data);
     }
 
     private function guruDashboard()
@@ -129,7 +129,7 @@ class DashboardController extends Controller
             'mapels' => MataPelajaran::all(),
             'siswas' => Siswa::all(),
         ];
-        return view('dashboard.guru', $data);
+        return view('dashboard.guru.guru', $data);
     }
 
     private function waliKelasDashboard()
@@ -155,7 +155,7 @@ class DashboardController extends Controller
             'presensi' => Presensi::with('siswa')->whereIn('siswa_id', $siswaIds)->get(),
             'nilais' => Nilai::with(['siswa', 'mataPelajaran'])->whereIn('siswa_id', $siswaIds)->get(),
         ];
-        return view('dashboard.wali_kelas', $data);
+        return view('dashboard.wali_kelas.wali_kelas', $data);
     }
 
     private function siswaDashboard()
@@ -176,7 +176,7 @@ class DashboardController extends Controller
             'presensis' => Presensi::where('siswa_id', $siswa->id)->get(),
             'pelanggarans' => PelanggaranBk::with('guruBk')->where('siswa_id', $siswa->id)->get(),
         ];
-        return view('dashboard.siswa', $data);
+        return view('dashboard.admin.siswa', $data);
     }
 
     private function guruBkDashboard()
@@ -190,7 +190,7 @@ class DashboardController extends Controller
             'pelanggarans' => PelanggaranBk::with(['siswa', 'guruBk'])->get(),
             'gurus' => Guru::all(),
         ];
-        return view('dashboard.guru_bk', $data);
+        return view('dashboard.bk.guru_bk', $data);
     }
 
     // ACTIONS FOR DATA MANAGEMENT
@@ -200,6 +200,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'nik'  => 'nullable|string|max:100|unique:users,nik',
             'email' => [
                 'required',
                 'string',
@@ -222,8 +223,18 @@ class DashboardController extends Controller
             'jenis_kelamin' => 'required|in:L,P',
         ]);
 
+        // Auto-generate NIK from email prefix if not provided
+        $nik = $request->nik ?: preg_replace('/[^a-zA-Z0-9_]/', '', explode('@', $request->email)[0]);
+        // Ensure NIK uniqueness
+        $baseNik = $nik;
+        $suffix = 1;
+        while (\App\Models\User::where('nik', $nik)->exists()) {
+            $nik = $baseNik . $suffix++;
+        }
+
         $user = User::create([
             'name' => $request->name,
+            'nik'  => $nik,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role_id' => $request->role_id,
@@ -955,7 +966,7 @@ class DashboardController extends Controller
             'kelas' => Kelas::with('waliGuru')->get(),
             'gurus' => Guru::all(),
         ];
-        return view('dashboard.kelas', $data);
+        return view('dashboard.admin.kelas', $data);
     }
 
     public function updateKelas(Request $request, $id)
@@ -987,7 +998,7 @@ class DashboardController extends Controller
         $data = [
             'mapel' => MataPelajaran::all(),
         ];
-        return view('dashboard.mapel', $data);
+        return view('dashboard.admin.mapel', $data);
     }
 
     public function updateMapel(Request $request, $id)
@@ -1035,7 +1046,7 @@ class DashboardController extends Controller
             'nilais' => Nilai::whereIn('siswa_id', $siswaIds)->get(),
         ];
 
-        return view('dashboard.wali_siswa', $data);
+        return view('dashboard.wali_kelas.wali_siswa', $data);
     }
 
     public function waliAbsensi()
@@ -1064,7 +1075,7 @@ class DashboardController extends Controller
             'presensi' => Presensi::whereIn('siswa_id', $siswaIds)->get(),
         ];
 
-        return view('dashboard.wali_absensi', $data);
+        return view('dashboard.wali_kelas.wali_absensi', $data);
     }
 
     public function siswaElearning()
@@ -1084,7 +1095,7 @@ class DashboardController extends Controller
             'materiTugas' => MateriTugas::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
         ];
 
-        return view('dashboard.siswa_elearning', $data);
+        return view('dashboard.siswa.siswa_elearning', $data);
     }
 
     public function siswaCbt()
@@ -1103,7 +1114,7 @@ class DashboardController extends Controller
             'kelas' => $siswa->kelas,
         ];
 
-        return view('dashboard.siswa_cbt', $data);
+        return view('dashboard.siswa.siswa_cbt', $data);
     }
 
     public function siswaJadwal()
@@ -1123,7 +1134,7 @@ class DashboardController extends Controller
             'jadwals' => JadwalPelajaran::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
         ];
 
-        return view('dashboard.siswa_jadwal', $data);
+        return view('dashboard.siswa.siswa_jadwal', $data);
     }
 
     public function siswaPresensi()
@@ -1143,7 +1154,7 @@ class DashboardController extends Controller
             'presensis' => Presensi::where('siswa_id', $siswa->id)->get(),
         ];
 
-        return view('dashboard.siswa_presensi', $data);
+        return view('dashboard.siswa.siswa_presensi', $data);
     }
 
     public function adminUsersIndex()
@@ -1157,7 +1168,7 @@ class DashboardController extends Controller
             'users' => User::with('role')->get(),
             'roles' => Role::all(),
         ];
-        return view('dashboard.users', $data);
+        return view('dashboard.admin.users', $data);
     }
 
     public function guruJadwalIndex()
@@ -1177,7 +1188,7 @@ class DashboardController extends Controller
             'kelas' => Kelas::all(),
             'mapels' => MataPelajaran::all(),
         ];
-        return view('dashboard.guru_jadwal', $data);
+        return view('dashboard.guru.guru_jadwal', $data);
     }
 
     public function guruElearningIndex()
@@ -1197,7 +1208,7 @@ class DashboardController extends Controller
             'kelas' => Kelas::all(),
             'mapels' => MataPelajaran::all(),
         ];
-        return view('dashboard.guru_elearning', $data);
+        return view('dashboard.guru.guru_elearning', $data);
     }
 
     public function guruNilaiIndex()
@@ -1218,7 +1229,7 @@ class DashboardController extends Controller
             'mapels' => MataPelajaran::all(),
             'nilais' => Nilai::with(['siswa', 'mataPelajaran'])->latest()->take(20)->get(),
         ];
-        return view('dashboard.guru_nilai', $data);
+        return view('dashboard.guru.guru_nilai', $data);
     }
 
     public function bkPelanggaranIndex()
@@ -1235,7 +1246,7 @@ class DashboardController extends Controller
             'pelanggarans' => PelanggaranBk::with(['siswa', 'guruBk'])->get(),
             'gurus' => Guru::all(),
         ];
-        return view('dashboard.bk_pelanggaran', $data);
+        return view('dashboard.bk.bk_pelanggaran', $data);
     }
 
     public function guruCbtIndex()
@@ -1252,7 +1263,7 @@ class DashboardController extends Controller
         $data = [
             'guru' => $guru,
         ];
-        return view('dashboard.guru_cbt', $data);
+        return view('dashboard.guru.guru_cbt', $data);
     }
 
     public function profilMadrasahIndex()
@@ -1264,7 +1275,7 @@ class DashboardController extends Controller
 
         $profile = SchoolProfile::firstOrCreate(['id' => 1]);
 
-        return view('dashboard.profil_madrasah', compact('profile'));
+        return view('dashboard.admin.profil_madrasah', compact('profile'));
     }
 
     public function updateProfilMadrasah(Request $request)
@@ -1340,7 +1351,7 @@ class DashboardController extends Controller
         }
 
         $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->orderBy('semester', 'asc')->get();
-        return view('dashboard.tahun_ajaran', compact('years'));
+        return view('dashboard.admin.tahun_ajaran', compact('years'));
     }
 
     public function storeAcademicYear(Request $request)
@@ -1557,7 +1568,7 @@ class DashboardController extends Controller
         $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->get();
         $activeYear = AcademicYear::where('active', true)->first();
 
-        return view('dashboard.tahun_ajaran_libur', compact('holidays', 'years', 'activeYear'));
+        return view('dashboard.admin.tahun_ajaran_libur', compact('holidays', 'years', 'activeYear'));
     }
 
     public function storeHoliday(Request $request)
@@ -1678,7 +1689,7 @@ class DashboardController extends Controller
         $siswas = $query->paginate(20)->withQueryString();
         $kelas = Kelas::all();
 
-        return view('dashboard.siswa', compact('siswas', 'kelas'));
+        return view('dashboard.admin.siswa', compact('siswas', 'kelas'));
     }
 
     public function storeSiswa(Request $request)
@@ -1877,7 +1888,7 @@ class DashboardController extends Controller
             return Carbon::parse($b['date'])->timestamp <=> Carbon::parse($a['date'])->timestamp;
         });
 
-        return view('dashboard.siswa_history', compact('siswa', 'timeline'));
+        return view('dashboard.admin.siswa_history', compact('siswa', 'timeline'));
     }
 
     public function pindahKelasIndex()
@@ -1890,7 +1901,7 @@ class DashboardController extends Controller
         $kelas = Kelas::all();
         $siswas = Siswa::where('status', 'Aktif')->orderBy('nama')->get();
 
-        return view('dashboard.pindah_kelas', compact('kelas', 'siswas'));
+        return view('dashboard.admin.pindah_kelas', compact('kelas', 'siswas'));
     }
 
     public function pindahKelasStore(Request $request)
@@ -1954,7 +1965,7 @@ class DashboardController extends Controller
             $q->where('status', 'Aktif');
         }])->get();
 
-        return view('dashboard.naik_kelas', compact('kelas'));
+        return view('dashboard.admin.naik_kelas', compact('kelas'));
     }
 
     public function naikKelasStore(Request $request)
@@ -2045,7 +2056,7 @@ class DashboardController extends Controller
 
         $alumni = $query->paginate(20)->withQueryString();
 
-        return view('dashboard.alumni', compact('alumni'));
+        return view('dashboard.admin.alumni', compact('alumni'));
     }
 
     public function updateAlumniContact(Request $request, $id)
@@ -2089,7 +2100,7 @@ class DashboardController extends Controller
             'roles' => Role::whereIn('name', ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])->get(),
             'classes' => Kelas::all(),
         ];
-        return view('dashboard.guru_admin', $data);
+        return view('dashboard.admin.guru_admin', $data);
     }
 
     public function storeGuru(Request $request)

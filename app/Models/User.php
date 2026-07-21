@@ -20,6 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'nik',
         'email',
         'password',
         'role_id',
@@ -57,6 +58,7 @@ class User extends Authenticatable
     {
         return $this->role && $this->role->name === $roleName;
     }
+
 
     public function isSuperAdmin()
     {
