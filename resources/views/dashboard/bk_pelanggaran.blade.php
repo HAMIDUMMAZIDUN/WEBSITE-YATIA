@@ -5,7 +5,15 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" x-data="{ 
+        searchQuery: '', 
+        statusFilter: '', 
+        selectAll: false, 
+        toggleAll() { 
+            const checkboxes = document.querySelectorAll('.item-checkbox'); 
+            checkboxes.forEach(cb => { cb.checked = this.selectAll; }); 
+        } 
+    }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
             @if(session('success'))
                 <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
@@ -38,14 +46,32 @@
                 <!-- Case Logs -->
                 <div class="lg:col-span-8 space-y-8">
                     <div id="kasus-section" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-6">
-                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                             <h3 class="font-bold text-lg text-slate-900">Buku Catatan Kasus Pelanggaran</h3>
-                            <span class="px-3 py-1 rounded bg-slate-100 text-slate-600 font-semibold text-xs uppercase tracking-wider">Jurnal Harian</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="relative">
+                                    <input type="text" x-model="searchQuery" placeholder="Cari siswa/pelanggaran..." class="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-rose-500 w-44">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <select x-model="statusFilter" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-rose-500">
+                                    <option value="">Semua Status</option>
+                                    <option value="diproses">Diproses</option>
+                                    <option value="diselesaikan">Selesai</option>
+                                    <option value="panggilan_orang_tua">Panggilan OT</option>
+                                </select>
+                                <button type="button" @click="window.bulkDeleteSelected('.item-checkbox', '{{ csrf_token() }}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Terpilih
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
                                     <tr>
+                                        <th class="px-6 py-3 w-10">
+                                            <input type="checkbox" x-model="selectAll" @change="toggleAll()" class="rounded border-slate-300 text-rose-650 focus:ring-rose-500">
+                                        </th>
                                         <th class="px-6 py-3">Tanggal</th>
                                         <th class="px-6 py-3">Siswa</th>
                                         <th class="px-6 py-3">Pelanggaran & Poin</th>
@@ -55,7 +81,11 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($pelanggarans as $plg)
-                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <tr class="hover:bg-slate-50/40 transition-colors"
+                                            x-show="(searchQuery === '' || '{{ strtolower(addslashes($plg->siswa->nama)) }}'.includes(searchQuery.toLowerCase()) || '{{ strtolower(addslashes($plg->pelanggaran)) }}'.includes(searchQuery.toLowerCase())) && (statusFilter === '' || '{{ $plg->status }}' === statusFilter)">
+                                            <td class="px-6 py-4">
+                                                <input type="checkbox" class="item-checkbox rounded border-slate-300 text-rose-650 focus:ring-rose-500" data-delete-url="{{ route('bk.pelanggaran.delete', $plg->id) }}">
+                                            </td>
                                             <td class="px-6 py-4 font-mono text-xs text-slate-500">
                                                 {{ Carbon\Carbon::parse($plg->tanggal)->format('d M Y') }}
                                             </td>
@@ -105,7 +135,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada catatan pelanggaran kedisiplinan.</td>
+                                            <td colspan="6" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada catatan pelanggaran kedisiplinan.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

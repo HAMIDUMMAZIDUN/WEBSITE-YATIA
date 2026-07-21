@@ -14,7 +14,19 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editUser: { id: '', name: '', email: '', role_id: '' } }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ 
+            editModalOpen: false, 
+            editUser: { id: '', name: '', email: '', role_id: '', jenis_kelamin: 'L' },
+            searchQuery: '',
+            roleFilter: '',
+            selectAll: false,
+            toggleAll() {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.checked = this.selectAll;
+                });
+            }
+        }">
             <!-- Toast Notifications -->
             @if(session('success'))
                 <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
@@ -34,14 +46,32 @@
                 <!-- Users Table -->
                 <div class="lg:col-span-8 space-y-8">
                     <div id="users-section" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-6">
-                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <h3 class="font-bold text-lg text-slate-900">Daftar Pengguna Aktif</h3>
-                            <span class="px-3 py-1 rounded bg-slate-100 text-slate-600 font-semibold text-xs uppercase tracking-wider">Tabel Pengguna</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="relative">
+                                    <input type="text" x-model="searchQuery" placeholder="Cari nama/email..." class="pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-emerald-500 w-44">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <select x-model="roleFilter" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+                                    <option value="">Semua Peran</option>
+                                    @foreach($roles as $rl)
+                                        <option value="{{ $rl->id }}">{{ $rl->display_name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" @click="window.bulkDeleteSelected('.item-checkbox', '{{ csrf_token() }}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Terpilih
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
                                     <tr>
+                                        <th class="px-6 py-3 w-10">
+                                            <input type="checkbox" x-model="selectAll" @change="toggleAll()" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                        </th>
                                         <th class="px-6 py-3">Nama</th>
                                         <th class="px-6 py-3">Email</th>
                                         <th class="px-6 py-3">Hak Akses</th>
@@ -50,7 +80,15 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach($users as $usr)
-                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <tr class="hover:bg-slate-50/40 transition-colors"
+                                            x-show="(searchQuery === '' || '{{ strtolower(addslashes($usr->name)) }}'.includes(searchQuery.toLowerCase()) || '{{ strtolower(addslashes($usr->email)) }}'.includes(searchQuery.toLowerCase())) && (roleFilter === '' || '{{ $usr->role_id }}' === roleFilter)">
+                                            <td class="px-6 py-4">
+                                                @if($usr->id !== Auth::id())
+                                                    <input type="checkbox" class="item-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('admin.users.delete', $usr->id) }}">
+                                                @else
+                                                    <span class="text-slate-300">-</span>
+                                                @endif
+                                            </td>
                                             <td class="px-6 py-4 font-semibold text-slate-900">{{ $usr->name }}</td>
                                             <td class="px-6 py-4">{{ $usr->email }}</td>
                                             <td class="px-6 py-4">
@@ -67,13 +105,22 @@
                                             </td>
                                             <td class="px-6 py-4 text-center">
                                                 <div class="flex items-center justify-center gap-3">
+                                                    @php
+                                                        $usrGender = 'L';
+                                                        if ($usr->guru) {
+                                                            $usrGender = $usr->guru->jenis_kelamin ?? 'L';
+                                                        } elseif ($usr->siswa) {
+                                                            $usrGender = $usr->siswa->jenis_kelamin ?? 'L';
+                                                        }
+                                                    @endphp
                                                     <button 
                                                         @click="
                                                             editUser = { 
                                                                 id: '{{ $usr->id }}', 
                                                                 name: '{{ addslashes($usr->name) }}', 
                                                                 email: '{{ addslashes($usr->email) }}', 
-                                                                role_id: '{{ $usr->role_id }}' 
+                                                                role_id: '{{ $usr->role_id }}',
+                                                                jenis_kelamin: '{{ $usrGender }}'
                                                             }; 
                                                             editModalOpen = true;
                                                         "
@@ -128,6 +175,13 @@
                                     @foreach($roles as $rl)
                                         <option value="{{ $rl->id }}">{{ $rl->display_name }}</option>
                                     @endforeach
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Jenis Kelamin</label>
+                                <select name="jenis_kelamin" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
                                 </select>
                             </div>
                             <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-colors">
@@ -187,6 +241,13 @@
                                 @foreach($roles as $rl)
                                     <option value="{{ $rl->id }}">{{ $rl->display_name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Jenis Kelamin</label>
+                            <select name="jenis_kelamin" required x-model="editUser.jenis_kelamin" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
                             </select>
                         </div>
                         <div class="flex gap-3 pt-2">

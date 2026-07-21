@@ -32,4 +32,29 @@ class Siswa extends Model
     {
         return $this->hasMany(PelanggaranBk::class);
     }
+
+    public function attendanceDaily()
+    {
+        return $this->hasMany(AttendanceDaily::class, 'student_id');
+    }
+
+    public function studentGuardians()
+    {
+        return $this->hasMany(StudentGuardian::class, 'student_id');
+    }
+
+    public function achievementsViolations()
+    {
+        return $this->hasMany(AchievementViolation::class, 'student_id');
+    }
+
+    public function studentInterventions()
+    {
+        return $this->hasMany(StudentIntervention::class, 'student_id');
+    }
+
+    public function promotionDecisions()
+    {
+        return $this->hasMany(PromotionDecision::class, 'student_id');
+    }
 }

@@ -5,7 +5,25 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" x-data="{ 
+        jadwalSearch: '',
+        materiSearch: '',
+        materiFilter: '',
+        selectAllJadwal: false,
+        selectAllMateri: false,
+        toggleAllJadwal() {
+            const checkboxes = document.querySelectorAll('.jadwal-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.selectAllJadwal;
+            });
+        },
+        toggleAllMateri() {
+            const checkboxes = document.querySelectorAll('.materi-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.selectAllMateri;
+            });
+        }
+    }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
             <!-- Toast Notifications -->
             @if(session('success'))
@@ -44,14 +62,26 @@
                 <div class="lg:col-span-8 space-y-8">
                     <!-- Schedule Table -->
                     <div id="jadwal-mengajar" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-6">
-                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <h3 class="font-bold text-lg text-slate-900">Jadwal Mengajar</h3>
-                            <span class="px-3 py-1 rounded bg-slate-100 text-slate-600 font-semibold text-xs uppercase tracking-wider">Aktif</span>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <input type="text" x-model="jadwalSearch" placeholder="Cari hari/kelas/mapel..." class="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 w-44">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <button type="button" @click="window.bulkDeleteSelected('.jadwal-checkbox', '{{ csrf_token() }}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Terpilih
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
                                     <tr>
+                                        <th class="px-6 py-3 w-10">
+                                            <input type="checkbox" x-model="selectAllJadwal" @change="toggleAllJadwal()" class="rounded border-slate-300 text-blue-650 focus:ring-blue-500">
+                                        </th>
                                         <th class="px-6 py-3">Hari</th>
                                         <th class="px-6 py-3">Mata Pelajaran</th>
                                         <th class="px-6 py-3">Kelas</th>
@@ -61,7 +91,11 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($jadwals as $jadwal)
-                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <tr class="hover:bg-slate-50/40 transition-colors"
+                                            x-show="jadwalSearch === '' || '{{ strtolower(addslashes($jadwal->hari)) }}'.includes(jadwalSearch.toLowerCase()) || '{{ strtolower(addslashes($jadwal->mataPelajaran->nama_mapel)) }}'.includes(jadwalSearch.toLowerCase()) || '{{ strtolower(addslashes($jadwal->kelas->nama_kelas)) }}'.includes(jadwalSearch.toLowerCase())">
+                                            <td class="px-6 py-4">
+                                                <input type="checkbox" class="jadwal-checkbox rounded border-slate-300 text-blue-650 focus:ring-blue-500" data-delete-url="{{ route('guru.jadwal.delete', $jadwal->id) }}">
+                                            </td>
                                             <td class="px-6 py-4 font-semibold text-slate-900">{{ $jadwal->hari }}</td>
                                             <td class="px-6 py-4 font-medium text-slate-700">{{ $jadwal->mataPelajaran->nama_mapel }}</td>
                                             <td class="px-6 py-4 font-mono text-xs uppercase tracking-wider text-emerald-600 font-bold">{{ $jadwal->kelas->nama_kelas }}</td>
@@ -84,7 +118,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada jadwal mengajar yang diinput.</td>
+                                            <td colspan="6" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada jadwal mengajar yang diinput.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -94,14 +128,31 @@
  
                     <!-- E-learning & Materials Card -->
                     <div id="elearning-section" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-6">
-                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <h3 class="font-bold text-lg text-slate-900">Materi & Tugas E-learning</h3>
-                            <span class="px-3 py-1 rounded bg-emerald-50 text-emerald-600 font-semibold text-xs uppercase tracking-wider">Modul Terunggah</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="relative">
+                                    <input type="text" x-model="materiSearch" placeholder="Cari judul..." class="pl-8 pr-3 py-1.5 bg-slate-5-0 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500 w-36">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <select x-model="materiFilter" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+                                    <option value="">Semua Tipe</option>
+                                    <option value="materi">Materi</option>
+                                    <option value="tugas">Tugas</option>
+                                </select>
+                                <button type="button" @click="window.bulkDeleteSelected('.materi-checkbox', '{{ csrf_token() }}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Terpilih
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
                                     <tr>
+                                        <th class="px-6 py-3 w-10">
+                                            <input type="checkbox" x-model="selectAllMateri" @change="toggleAllMateri()" class="rounded border-slate-300 text-emerald-650 focus:ring-emerald-500">
+                                        </th>
                                         <th class="px-6 py-3">Judul</th>
                                         <th class="px-6 py-3">Tipe</th>
                                         <th class="px-6 py-3">Kelas / Mapel</th>
@@ -111,7 +162,11 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($materiTugas as $mt)
-                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <tr class="hover:bg-slate-50/40 transition-colors"
+                                            x-show="(materiSearch === '' || '{{ strtolower(addslashes($mt->judul)) }}'.includes(materiSearch.toLowerCase())) && (materiFilter === '' || '{{ $mt->tipe }}' === materiFilter)">
+                                            <td class="px-6 py-4">
+                                                <input type="checkbox" class="materi-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('guru.materi_tugas.delete', $mt->id) }}">
+                                            </td>
                                             <td class="px-6 py-4">
                                                 <span class="block font-semibold text-slate-900">{{ $mt->judul }}</span>
                                                 <span class="block text-xs text-slate-400 truncate max-w-xs">{{ $mt->deskripsi ?? 'Tanpa deskripsi' }}</span>
@@ -141,7 +196,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada materi atau tugas yang diunggah.</td>
+                                            <td colspan="6" class="px-6 py-8 text-center text-slate-400 font-medium">Belum ada materi atau tugas yang diunggah.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

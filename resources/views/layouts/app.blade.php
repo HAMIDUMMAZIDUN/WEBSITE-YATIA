@@ -33,6 +33,58 @@
                 localStorage.theme = 'dark';
             }
         }
+
+        window.bulkDeleteSelected = async function(checkboxSelector, csrfToken) {
+            const checkboxes = document.querySelectorAll(checkboxSelector + ':checked');
+            if (checkboxes.length === 0) {
+                alert('Pilih setidaknya satu data untuk dihapus.');
+                return;
+            }
+            if (!confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} data yang dipilih?`)) {
+                return;
+            }
+            
+            const loader = document.createElement('div');
+            loader.className = 'fixed inset-0 z-[999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center';
+            loader.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-3 border border-slate-100 dark:border-slate-800">
+                    <svg class="animate-spin h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Menghapus data masal... <span id="bulk-progress">0</span>/${checkboxes.length}</span>
+                </div>
+            `;
+            document.body.appendChild(loader);
+            
+            let deletedCount = 0;
+            for (const cb of checkboxes) {
+                const deleteUrl = cb.getAttribute('data-delete-url');
+                if (!deleteUrl) continue;
+                
+                try {
+                    const response = await fetch(deleteUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            _method: 'DELETE'
+                        })
+                    });
+                    if (response.ok) {
+                        deletedCount++;
+                        const progressEl = document.getElementById('bulk-progress');
+                        if (progressEl) progressEl.innerText = deletedCount;
+                    }
+                } catch (err) {
+                    console.error('Failed to delete item', err);
+                }
+            }
+            
+            window.location.reload();
+        };
     </script>
 
     <style>
@@ -70,6 +122,48 @@
 
         .dark .sidebar-scroll::-webkit-scrollbar-thumb {
             background: #334155;
+        }
+
+        /* Modern Colorful Card Accents */
+        .bg-white {
+            background-color: #ffffff !important;
+            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.015), 0 8px 10px -6px rgba(0, 0, 0, 0.015) !important;
+            border-radius: 1.25rem !important;
+        }
+        .dark .bg-slate-900 {
+            background-color: #0f172a !important; /* Space navy */
+            border: 1px solid rgba(51, 65, 85, 0.5) !important;
+            box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.15) !important;
+            border-radius: 1.25rem !important;
+        }
+
+        /* Soft colorful gradient glows globally */
+        body {
+            background: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
+                        #f8fafc !important;
+        }
+        html.dark body {
+            background: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
+                        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 45%),
+                        #020617 !important; /* Ultra-premium dark slate */
+        }
+
+        /* Neon / Stabilo active menu styling */
+        .active-stabilo {
+            background-color: #d9f99d !important; /* Lime 200 */
+            color: #0f172a !important; /* Dark text */
+            font-weight: 800 !important;
+            border: 1px solid #a3e635 !important; /* Lime 400 */
+            box-shadow: 0 4px 12px 0 rgba(163, 230, 53, 0.25) !important;
+        }
+        .dark .active-stabilo {
+            background-color: #e6ff00 !important; /* Neon stabilo yellow */
+            color: #020617 !important;
+            font-weight: 900 !important;
+            border: 1px solid #bef264 !important;
+            box-shadow: 0 4px 20px 0 rgba(230, 255, 0, 0.35) !important;
         }
     </style>
 </head>

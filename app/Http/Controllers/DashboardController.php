@@ -15,7 +15,15 @@ use App\Models\MateriTugas;
 use App\Models\Nilai;
 use App\Models\Presensi;
 use App\Models\PelanggaranBk;
+use App\Models\AttendanceDaily;
+use App\Models\AuditLog;
+use App\Models\SchoolProfile;
+use App\Models\PromotionDecision;
+use App\Models\AcademicYear;
+use App\Models\AcademicHoliday;
+use App\Models\ClassHomeroom;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -41,18 +49,63 @@ class DashboardController extends Controller
 
     private function superAdminDashboard()
     {
+        $today = Carbon::today()->toDateString();
+        
+        // Calculate attendance stats for today
+        $attendanceStats = [
+            'hadir' => AttendanceDaily::where('date', $today)->where('status', 'H')->count(),
+            'sakit' => AttendanceDaily::where('date', $today)->where('status', 'S')->count(),
+            'izin' => AttendanceDaily::where('date', $today)->where('status', 'I')->count(),
+            'alpa' => AttendanceDaily::where('date', $today)->where('status', 'A')->count(),
+            'terlambat' => AttendanceDaily::where('date', $today)->where('status', 'T')->count(),
+        ];
+
+        // Class attendance completeness
+        $classes = Kelas::all();
+        $classStatusList = [];
+        $classesFilledCount = 0;
+
+        foreach ($classes as $cls) {
+            $totalStudents = Siswa::where('kelas_id', $cls->id)->count();
+            $filledStudents = AttendanceDaily::where('date', $today)->where('class_id', $cls->id)->count();
+            
+            $status = ($filledStudents > 0) ? 'Selesai' : 'Belum Isi';
+            if ($filledStudents > 0) {
+                $classesFilledCount++;
+            }
+
+            $classStatusList[] = [
+                'kelas' => $cls,
+                'total_students' => $totalStudents,
+                'filled_students' => $filledStudents,
+                'status' => $status,
+            ];
+        }
+
+        // Retrieve latest audit logs
+        $latestActivities = AuditLog::with('user')->latest()->take(5)->get();
+
         $data = [
             'counts' => [
                 'users' => User::count(),
-                'gurus' => Guru::count(),
-                'siswas' => Siswa::count(),
-                'kelas' => Kelas::count(),
-                'mapel' => MataPelajaran::count(),
+                'gurus_l' => Guru::where('jenis_kelamin', 'L')->count(),
+                'gurus_p' => Guru::where('jenis_kelamin', 'P')->count(),
+                'gurus_total' => Guru::count(),
+                'siswas_l' => Siswa::where('jenis_kelamin', 'L')->count(),
+                'siswas_p' => Siswa::where('jenis_kelamin', 'P')->count(),
+                'siswas_total' => Siswa::count(),
+                'kelas_total' => Kelas::count(),
+                'mapel_total' => MataPelajaran::count(),
             ],
+            'attendance_stats' => $attendanceStats,
+            'class_status_list' => $classStatusList,
+            'classes_filled_count' => $classesFilledCount,
+            'classes_total_count' => $classes->count(),
+            'latest_activities' => $latestActivities,
             'users' => User::with('role')->get(),
             'gurus' => Guru::with('user')->get(),
             'siswas' => Siswa::with(['user', 'kelas'])->get(),
-            'kelas' => Kelas::with('waliGuru')->get(),
+            'kelas' => $classes,
             'mapel' => MataPelajaran::all(),
             'roles' => Role::all(),
         ];
@@ -166,6 +219,7 @@ class DashboardController extends Controller
             ],
             'password' => 'required|string|min:6',
             'role_id' => 'required|exists:roles,id',
+            'jenis_kelamin' => 'required|in:L,P',
         ]);
 
         $user = User::create([
@@ -182,12 +236,14 @@ class DashboardController extends Controller
                 'user_id' => $user->id,
                 'nama' => $user->name,
                 'nip' => 'NIP-' . time(),
+                'jenis_kelamin' => $request->jenis_kelamin,
             ]);
         } elseif ($role->name === 'siswa') {
             Siswa::create([
                 'user_id' => $user->id,
                 'nama' => $user->name,
                 'nis' => 'NIS-' . time(),
+                'jenis_kelamin' => $request->jenis_kelamin,
             ]);
         }
 
@@ -575,9 +631,9 @@ class DashboardController extends Controller
             fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM
 
             if ($type === 'users') {
-                fputcsv($file, ['Nama', 'Email', 'Password', 'Role (super_admin/guru/wali_kelas/siswa/guru_bk/wali_kelas_guru)']);
-                fputcsv($file, ['John Doe', 'johndoe@gmail.com', 'password123', 'siswa']);
-                fputcsv($file, ['Jane Smith, M.Pd', 'janesmith@gmail.com', 'password123', 'guru']);
+                fputcsv($file, ['Nama', 'Email', 'Password', 'Role (super_admin/guru/wali_kelas/siswa/guru_bk/wali_kelas_guru)', 'Jenis Kelamin (L/P)']);
+                fputcsv($file, ['John Doe', 'johndoe@gmail.com', 'password123', 'siswa', 'L']);
+                fputcsv($file, ['Jane Smith, M.Pd', 'janesmith@gmail.com', 'password123', 'guru', 'P']);
             } elseif ($type === 'kelas') {
                 fputcsv($file, ['Nama Kelas', 'NIP Wali Kelas']);
                 fputcsv($file, ['XII IPA 3', '198205122008042003']);
@@ -646,6 +702,10 @@ class DashboardController extends Controller
                     $email = trim($row[1]);
                     $password = trim($row[2]);
                     $roleName = trim($row[3]);
+                    $gender = isset($row[4]) ? strtoupper(trim($row[4])) : 'L';
+                    if (!in_array($gender, ['L', 'P'])) {
+                        $gender = 'L';
+                    }
 
                     if (User::where('email', $email)->exists()) {
                         throw new \Exception("Email '$email' sudah terdaftar (Baris $rowCount)");
@@ -672,6 +732,7 @@ class DashboardController extends Controller
                             'user_id' => $user->id,
                             'nama' => $user->name,
                             'nip' => 'NIP-' . time() . '-' . rand(10, 99),
+                            'jenis_kelamin' => $gender,
                         ]);
                     } elseif ($role->name === 'siswa') {
                         $defaultKelas = Kelas::first();
@@ -680,6 +741,7 @@ class DashboardController extends Controller
                             'nama' => $user->name,
                             'nis' => 'NIS-' . time() . '-' . rand(10, 99),
                             'kelas_id' => $defaultKelas ? $defaultKelas->id : null,
+                            'jenis_kelamin' => $gender,
                         ]);
                     }
                     $importedCount++;
@@ -830,6 +892,7 @@ class DashboardController extends Controller
             ],
             'role_id' => 'required|exists:roles,id',
             'password' => 'nullable|string|min:6',
+            'jenis_kelamin' => 'required|in:L,P',
         ]);
 
         $userData = [
@@ -852,9 +915,13 @@ class DashboardController extends Controller
                     'user_id' => $user->id,
                     'nama' => $user->name,
                     'nip' => 'NIP-' . time(),
+                    'jenis_kelamin' => $request->jenis_kelamin,
                 ]);
             } else {
-                $user->guru->update(['nama' => $user->name]);
+                $user->guru->update([
+                    'nama' => $user->name,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                ]);
             }
         } elseif ($role->name === 'siswa') {
             if (!$user->siswa) {
@@ -864,9 +931,13 @@ class DashboardController extends Controller
                     'nama' => $user->name,
                     'nis' => 'NIS-' . time(),
                     'kelas_id' => $defaultKelas ? $defaultKelas->id : null,
+                    'jenis_kelamin' => $request->jenis_kelamin,
                 ]);
             } else {
-                $user->siswa->update(['nama' => $user->name]);
+                $user->siswa->update([
+                    'nama' => $user->name,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                ]);
             }
         }
 
@@ -1182,5 +1253,984 @@ class DashboardController extends Controller
             'guru' => $guru,
         ];
         return view('dashboard.guru_cbt', $data);
+    }
+
+    public function profilMadrasahIndex()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $profile = SchoolProfile::firstOrCreate(['id' => 1]);
+
+        return view('dashboard.profil_madrasah', compact('profile'));
+    }
+
+    public function updateProfilMadrasah(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $profile = SchoolProfile::firstOrCreate(['id' => 1]);
+
+        $request->validate([
+            'nama_yayasan' => 'nullable|string|max:255',
+            'nama_mts' => 'nullable|string|max:255',
+            'nama_ma' => 'nullable|string|max:255',
+            'nsm_mts' => 'nullable|numeric',
+            'nsm_ma' => 'nullable|numeric',
+            'npsn_mts' => 'nullable|numeric',
+            'npsn_ma' => 'nullable|numeric',
+            'status_sekolah' => 'nullable|string|max:255',
+            'akreditasi' => 'nullable|string|max:10',
+            'alamat' => 'nullable|string',
+            'telepon' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'website' => 'nullable|url|max:255',
+            'pimpinan_mts' => 'nullable|string|max:255',
+            'pimpinan_ma' => 'nullable|string|max:255',
+            'nip_pimpinan_mts' => 'nullable|string|max:50',
+            'nip_pimpinan_ma' => 'nullable|string|max:50',
+            'logo' => 'nullable|image|max:2048',
+            'stempel' => 'nullable|image|max:2048',
+            'tanda_tangan' => 'nullable|image|max:2048',
+            'alasan_perubahan' => 'required|string|min:5',
+        ]);
+
+        $oldData = $profile->toArray();
+        $data = $request->except(['logo', 'stempel', 'tanda_tangan', 'alasan_perubahan']);
+
+        // Handle File Uploads
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('school_assets', 'public');
+            $data['logo_path'] = '/storage/' . $logoPath;
+        }
+        if ($request->hasFile('stempel')) {
+            $stempelPath = $request->file('stempel')->store('school_assets', 'public');
+            $data['stempel_path'] = '/storage/' . $stempelPath;
+        }
+        if ($request->hasFile('tanda_tangan')) {
+            $tandaTanganPath = $request->file('tanda_tangan')->store('school_assets', 'public');
+            $data['tanda_tangan_path'] = '/storage/' . $tandaTanganPath;
+        }
+
+        $profile->update($data);
+
+        // Record Audit Log (FR-PROF-004)
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'update_school_profile',
+            'entity' => 'school_profiles',
+            'entity_id' => $profile->id,
+            'old_value' => json_encode($oldData),
+            'new_value' => json_encode($profile->fresh()->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Profil Madrasah berhasil diperbarui.');
+    }
+
+    public function academicYearsIndex()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->orderBy('semester', 'asc')->get();
+        return view('dashboard.tahun_ajaran', compact('years'));
+    }
+
+    public function storeAcademicYear(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'tahun_ajaran' => 'required|string|max:50',
+            'semester' => 'required|in:Ganjil,Genap',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
+            'hari_sekolah' => 'required|array',
+            'unit' => 'required|in:MTs,MA,Semua',
+        ]);
+
+        $exists = AcademicYear::where('tahun_ajaran', $request->tahun_ajaran)
+            ->where('semester', $request->semester)
+            ->where('unit', $request->unit)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->with('error', 'Tahun ajaran, semester, dan unit tersebut sudah terdaftar.');
+        }
+
+        $year = AcademicYear::create([
+            'tahun_ajaran' => $request->tahun_ajaran,
+            'semester' => $request->semester,
+            'tanggal_mulai' => $request->tanggal_mulai,
+            'tanggal_selesai' => $request->tanggal_selesai,
+            'hari_sekolah' => implode(',', $request->hari_sekolah),
+            'unit' => $request->unit,
+            'active' => false,
+            'locked' => false,
+        ]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'create_academic_year',
+            'entity' => 'academic_years',
+            'entity_id' => $year->id,
+            'new_value' => json_encode($year->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Tahun Ajaran & Semester berhasil ditambahkan.');
+    }
+
+    public function activateAcademicYear(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $year = AcademicYear::findOrFail($id);
+        $unit = $year->unit;
+
+        DB::beginTransaction();
+        try {
+            // Deactivate overlapping active years
+            $oldActivesQuery = AcademicYear::where('active', true);
+            if ($unit !== 'Semua') {
+                $oldActivesQuery->where(function($q) use ($unit) {
+                    $q->where('unit', 'Semua')->orWhere('unit', $unit);
+                });
+            }
+            $oldActives = $oldActivesQuery->get();
+
+            foreach ($oldActives as $oa) {
+                $oa->update(['active' => false]);
+            }
+
+            $year->update(['active' => true]);
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'activate_academic_year',
+                'entity' => 'academic_years',
+                'entity_id' => $year->id,
+                'old_value' => json_encode($oldActives->pluck('id')->toArray()),
+                'new_value' => json_encode($year->fresh()->toArray()),
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Tahun Ajaran & Semester (' . $year->unit . ') berhasil diaktifkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengaktifkan periode akademik: ' . $e->getMessage());
+        }
+    }
+
+    public function lockAcademicYear(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $year = AcademicYear::findOrFail($id);
+        $year->update(['locked' => true]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'lock_academic_year',
+            'entity' => 'academic_years',
+            'entity_id' => $year->id,
+            'new_value' => json_encode(['locked' => true]),
+        ]);
+
+        return redirect()->back()->with('success', 'Tahun Ajaran/Semester berhasil dikunci.');
+    }
+
+    public function unlockAcademicYear(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'alasan_perubahan' => 'required|string|max:500',
+        ]);
+
+        $year = AcademicYear::findOrFail($id);
+        $year->update(['locked' => false]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'unlock_academic_year',
+            'entity' => 'academic_years',
+            'entity_id' => $year->id,
+            'old_value' => json_encode(['locked' => true]),
+            'new_value' => json_encode(['locked' => false, 'alasan' => $request->alasan_perubahan]),
+        ]);
+
+        return redirect()->back()->with('success', 'Kunci tahun ajaran/semester berhasil dibuka.');
+    }
+
+    public function copyAcademicYearConfig(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'from_year_id' => 'required|exists:academic_years,id',
+            'copy_homerooms' => 'nullable|boolean',
+            'copy_holidays' => 'nullable|boolean',
+        ]);
+
+        $fromYear = AcademicYear::findOrFail($request->from_year_id);
+        $toYear = AcademicYear::findOrFail($id);
+
+        if ($toYear->locked) {
+            return redirect()->back()->with('error', 'Tahun ajaran tujuan sedang dikunci.');
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($request->copy_homerooms) {
+                $homerooms = ClassHomeroom::where('academic_year_id', $fromYear->id)->get();
+                foreach ($homerooms as $hr) {
+                    ClassHomeroom::firstOrCreate([
+                        'academic_year_id' => $toYear->id,
+                        'class_id' => $hr->class_id,
+                        'teacher_id' => $hr->teacher_id,
+                    ], [
+                        'active' => $hr->active,
+                    ]);
+                }
+            }
+
+            if ($request->copy_holidays) {
+                $holidays = AcademicHoliday::where('academic_year_id', $fromYear->id)->get();
+                foreach ($holidays as $hol) {
+                    AcademicHoliday::create([
+                        'academic_year_id' => $toYear->id,
+                        'tanggal_mulai' => $hol->tanggal_mulai,
+                        'tanggal_selesai' => $hol->tanggal_selesai,
+                        'keterangan' => $hol->keterangan,
+                        'unit' => $hol->unit,
+                        'is_nasional' => $hol->is_nasional,
+                    ]);
+                }
+            }
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'copy_academic_year_config',
+                'entity' => 'academic_years',
+                'entity_id' => $toYear->id,
+                'old_value' => json_encode(['from_year_id' => $fromYear->id]),
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Konfigurasi berhasil disalin dari periode sebelumnya.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyalin konfigurasi: ' . $e->getMessage());
+        }
+    }
+
+    public function holidaysIndex(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $holidays = AcademicHoliday::with('academicYear')->orderBy('tanggal_mulai', 'desc')->get();
+        $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->get();
+        $activeYear = AcademicYear::where('active', true)->first();
+
+        return view('dashboard.tahun_ajaran_libur', compact('holidays', 'years', 'activeYear'));
+    }
+
+    public function storeHoliday(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'keterangan' => 'required|string|max:255',
+            'unit' => 'required|in:MTs,MA,Semua',
+            'is_nasional' => 'nullable|boolean',
+        ]);
+
+        $academicYearId = $request->academic_year_id;
+        $tMulai = Carbon::parse($request->tanggal_mulai)->toDateString();
+        $tSelesai = Carbon::parse($request->tanggal_selesai)->toDateString();
+        $unit = $request->unit;
+
+        // Check range overlap
+        $overlap = AcademicHoliday::where('academic_year_id', $academicYearId)
+            ->where(function($q) use ($tMulai, $tSelesai) {
+                $q->whereBetween('tanggal_mulai', [$tMulai, $tSelesai])
+                  ->orWhereBetween('tanggal_selesai', [$tMulai, $tSelesai])
+                  ->orWhere(function($sub) use ($tMulai, $tSelesai) {
+                      $sub->where('tanggal_mulai', '<=', $tMulai)
+                          ->where('tanggal_selesai', '>=', $tSelesai);
+                  });
+            })
+            ->where(function($q) use ($unit) {
+                if ($unit !== 'Semua') {
+                    $q->whereIn('unit', [$unit, 'Semua']);
+                }
+            })
+            ->exists();
+
+        if ($overlap) {
+            return redirect()->back()->with('error', 'Tanggal libur tersebut tumpang tindih dengan libur lain yang sudah terdaftar.');
+        }
+
+        $holiday = AcademicHoliday::create([
+            'academic_year_id' => $academicYearId,
+            'tanggal_mulai' => $tMulai,
+            'tanggal_selesai' => $tSelesai,
+            'keterangan' => $request->keterangan,
+            'unit' => $unit,
+            'is_nasional' => $request->is_nasional ? true : false,
+        ]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'create_holiday',
+            'entity' => 'academic_holidays',
+            'entity_id' => $holiday->id,
+            'new_value' => json_encode($holiday->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Hari libur baru berhasil ditambahkan.');
+    }
+
+    public function deleteHoliday($id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $holiday = AcademicHoliday::findOrFail($id);
+        
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'delete_holiday',
+            'entity' => 'academic_holidays',
+            'entity_id' => $holiday->id,
+            'old_value' => json_encode($holiday->toArray()),
+        ]);
+
+        $holiday->delete();
+
+        return redirect()->back()->with('success', 'Hari libur berhasil dihapus.');
+    }
+
+    public function siswaIndex(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $query = Siswa::with(['kelas', 'user']);
+
+        // Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%");
+            });
+        }
+
+        // Class Filter
+        if ($request->filled('kelas_id')) {
+            $query->where('kelas_id', $request->kelas_id);
+        }
+
+        // Status Filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        } else {
+            $query->where('status', 'Aktif');
+        }
+
+        $siswas = $query->paginate(20)->withQueryString();
+        $kelas = Kelas::all();
+
+        return view('dashboard.siswa', compact('siswas', 'kelas'));
+    }
+
+    public function storeSiswa(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'nis' => 'required|string|unique:siswas',
+            'nisn' => 'nullable|string|unique:siswas',
+            'kelas_id' => 'required|exists:kelas,id',
+            'jenis_kelamin' => 'required|in:L,P',
+            'no_hp' => 'nullable|string',
+            'alamat' => 'nullable|string',
+        ]);
+
+        $siswaRole = Role::where('name', 'siswa')->firstOrFail();
+
+        $usr = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => $siswaRole->id,
+        ]);
+
+        $siswa = Siswa::create([
+            'user_id' => $usr->id,
+            'nis' => $request->nis,
+            'nisn' => $request->nisn,
+            'nama' => $request->name,
+            'kelas_id' => $request->kelas_id,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'no_hp' => $request->no_hp,
+            'alamat' => $request->alamat,
+            'status' => 'Aktif',
+        ]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'create_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'new_value' => json_encode($siswa->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Siswa berhasil ditambahkan.');
+    }
+
+    public function updateSiswa(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $siswa = Siswa::findOrFail($id);
+        $usr = $siswa->user;
+
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $usr->id,
+            'password' => 'nullable|string|min:8',
+            'nis' => 'required|string|unique:siswas,nis,' . $siswa->id,
+            'nisn' => 'nullable|string|unique:siswas,nisn,' . $siswa->id,
+            'kelas_id' => 'required|exists:kelas,id',
+            'jenis_kelamin' => 'required|in:L,P',
+            'no_hp' => 'nullable|string',
+            'alamat' => 'nullable|string',
+            'status' => 'required|in:Aktif,Mutasi,Keluar,Lulus,Drop Out',
+        ]);
+
+        $oldData = $siswa->toArray();
+
+        $usr->update([
+            'name' => $request->nama,
+            'email' => $request->email,
+        ]);
+
+        if ($request->filled('password')) {
+            $usr->update(['password' => Hash::make($request->password)]);
+        }
+
+        $siswa->update([
+            'nis' => $request->nis,
+            'nisn' => $request->nisn,
+            'nama' => $request->nama,
+            'kelas_id' => $request->kelas_id,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'no_hp' => $request->no_hp,
+            'alamat' => $request->alamat,
+            'status' => $request->status,
+        ]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'update_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'old_value' => json_encode($oldData),
+            'new_value' => json_encode($siswa->fresh()->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Data siswa berhasil diperbarui.');
+    }
+
+    public function deleteSiswa($id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $siswa = Siswa::findOrFail($id);
+        $usr = $siswa->user;
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'delete_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'old_value' => json_encode($siswa->toArray()),
+        ]);
+
+        $siswa->delete();
+        if ($usr) {
+            $usr->delete();
+        }
+
+        return redirect()->back()->with('success', 'Siswa berhasil dihapus secara permanen.');
+    }
+
+    public function siswaHistory($id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $siswa = Siswa::with(['kelas', 'presensis', 'pelanggaranBks', 'promotionDecisions'])->findOrFail($id);
+
+        // Compile timeline events chronologically
+        $timeline = [];
+
+        // 1. Enrollment/Creation event
+        $timeline[] = [
+            'date' => $siswa->created_at,
+            'title' => 'Pendaftaran Siswa',
+            'description' => "Siswa didaftarkan ke SIMS YATIA dengan NIS {$siswa->nis} di kelas " . ($siswa->kelas->nama_kelas ?? 'Belum Ditentukan'),
+            'type' => 'creation',
+            'icon' => 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'
+        ];
+
+        // 2. Class promotion/history events
+        foreach ($siswa->promotionDecisions as $decision) {
+            $source = Kelas::find($decision->source_class);
+            $target = Kelas::find($decision->target_class);
+            $timeline[] = [
+                'date' => $decision->created_at,
+                'title' => 'Mutasi/Kenaikan Kelas (' . ucfirst($decision->decision) . ')',
+                'description' => "Perubahan kelas dari " . ($source->nama_kelas ?? 'N/A') . " ke " . ($target->nama_kelas ?? 'N/A') . ". Catatan: " . ($decision->recommendation ?? '-'),
+                'type' => 'promotion',
+                'icon' => 'M9 5l7 7-7 7'
+            ];
+        }
+
+        // 3. Counseling infractions events
+        foreach ($siswa->pelanggaranBks as $infraction) {
+            $timeline[] = [
+                'date' => Carbon::parse($infraction->tanggal),
+                'title' => 'Catatan Kasus BK',
+                'description' => "Mencatat pelanggaran: {$infraction->pelanggaran} (+{$infraction->poin} poin). Tindakan: " . ($infraction->tindakan ?? '-'),
+                'type' => 'bk',
+                'icon' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+            ];
+        }
+
+        // 4. Attendance issues
+        $absences = $siswa->presensis()->where('status', '!=', 'hadir')->get();
+        foreach ($absences as $abs) {
+            $timeline[] = [
+                'date' => Carbon::parse($abs->tanggal),
+                'title' => 'Ketidakhadiran Dicatat',
+                'description' => "Ketidakhadiran terdeteksi: " . strtoupper($abs->status),
+                'type' => 'attendance',
+                'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+            ];
+        }
+
+        // Sort timeline descending by date
+        usort($timeline, function($a, $b) {
+            return Carbon::parse($b['date'])->timestamp <=> Carbon::parse($a['date'])->timestamp;
+        });
+
+        return view('dashboard.siswa_history', compact('siswa', 'timeline'));
+    }
+
+    public function pindahKelasIndex()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $kelas = Kelas::all();
+        $siswas = Siswa::where('status', 'Aktif')->orderBy('nama')->get();
+
+        return view('dashboard.pindah_kelas', compact('kelas', 'siswas'));
+    }
+
+    public function pindahKelasStore(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'siswa_ids' => 'required|array|min:1',
+            'siswa_ids.*' => 'exists:siswas,id',
+            'source_class_id' => 'required|exists:kelas,id',
+            'target_class_id' => 'required|exists:kelas,id|different:source_class_id',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $siswaIds = $request->siswa_ids;
+        $sourceClassId = $request->source_class_id;
+        $targetClassId = $request->target_class_id;
+
+        // Atomic multi-move
+        foreach ($siswaIds as $id) {
+            $siswa = Siswa::findOrFail($id);
+            if ($siswa->kelas_id == $sourceClassId) {
+                // Log the decision
+                PromotionDecision::create([
+                    'student_id' => $siswa->id,
+                    'source_class' => $sourceClassId,
+                    'target_class' => $targetClassId,
+                    'recommendation' => $request->catatan ?? 'Pindah kelas operasional manual.',
+                    'decision' => 'tinggal', // represents horizontal class transfer
+                ]);
+
+                // Update class
+                $siswa->update(['kelas_id' => $targetClassId]);
+
+                // Audit Log
+                AuditLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'transfer_siswa_class',
+                    'entity' => 'siswas',
+                    'entity_id' => $siswa->id,
+                    'old_value' => $sourceClassId,
+                    'new_value' => $targetClassId,
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Siswa terpilih berhasil dipindahkan ke kelas baru secara massal.');
+    }
+
+    public function naikKelasIndex()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $kelas = Kelas::withCount(['siswas' => function($q) {
+            $q->where('status', 'Aktif');
+        }])->get();
+
+        return view('dashboard.naik_kelas', compact('kelas'));
+    }
+
+    public function naikKelasStore(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'source_class_id' => 'required|exists:kelas,id',
+            'target_class_id' => 'required_if:action,promoted|nullable|exists:kelas,id|different:source_class_id',
+            'action' => 'required|in:promoted,graduated',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $sourceClassId = $request->source_class_id;
+        $action = $request->action;
+        $targetClassId = $request->target_class_id;
+
+        $siswas = Siswa::where('kelas_id', $sourceClassId)->where('status', 'Aktif')->get();
+
+        if ($siswas->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada siswa aktif di kelas asal.');
+        }
+
+        foreach ($siswas as $siswa) {
+            if ($action === 'promoted') {
+                // Create Promotion log
+                PromotionDecision::create([
+                    'student_id' => $siswa->id,
+                    'source_class' => $sourceClassId,
+                    'target_class' => $targetClassId,
+                    'recommendation' => $request->catatan ?? 'Kenaikan kelas akhir tahun ajaran.',
+                    'decision' => 'naik',
+                ]);
+
+                // Move class
+                $siswa->update(['kelas_id' => $targetClassId]);
+            } else {
+                // Graduate
+                PromotionDecision::create([
+                    'student_id' => $siswa->id,
+                    'source_class' => $sourceClassId,
+                    'target_class' => null,
+                    'recommendation' => $request->catatan ?? 'Kelulusan siswa dari madrasah.',
+                    'decision' => 'lulus',
+                ]);
+
+                // Set status and detach class
+                $siswa->update([
+                    'status' => 'Lulus',
+                    'kelas_id' => null
+                ]);
+            }
+
+            // Audit Log
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => $action === 'promoted' ? 'mass_promotion' : 'mass_graduation',
+                'entity' => 'siswas',
+                'entity_id' => $siswa->id,
+                'old_value' => $sourceClassId,
+                'new_value' => $action === 'promoted' ? $targetClassId : 'Lulus',
+            ]);
+        }
+
+        return redirect()->back()->with('success', count($siswas) . ' siswa berhasil diproses (' . ($action === 'promoted' ? 'Kenaikan Kelas' : 'Kelulusan') . ') secara massal.');
+    }
+
+    public function alumniIndex(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $query = Siswa::whereIn('status', ['Lulus', 'Keluar', 'Drop Out']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%");
+            });
+        }
+
+        $alumni = $query->paginate(20)->withQueryString();
+
+        return view('dashboard.alumni', compact('alumni'));
+    }
+
+    public function updateAlumniContact(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $siswa = Siswa::findOrFail($id);
+        $request->validate([
+            'no_hp' => 'nullable|string|max:50',
+            'alamat' => 'nullable|string',
+        ]);
+
+        $oldData = $siswa->toArray();
+        $siswa->update($request->only(['no_hp', 'alamat']));
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'update_alumni_contact',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'old_value' => json_encode($oldData),
+            'new_value' => json_encode($siswa->fresh()->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Kontak alumni berhasil diperbarui.');
+    }
+
+    // ─── ADMIN: DATA GURU CRUD ──────────────────────────────────────────────
+    public function adminGuruIndex()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $data = [
+            'gurus' => Guru::with(['user', 'kelasWali'])->get(),
+            'roles' => Role::whereIn('name', ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])->get(),
+            'classes' => Kelas::all(),
+        ];
+        return view('dashboard.guru_admin', $data);
+    }
+
+    public function storeGuru(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users',
+                function ($attribute, $value, $fail) {
+                    if (!str_ends_with(strtolower($value), '@gmail.com')) {
+                        $fail('Email harus menggunakan domain @gmail.com.');
+                        return;
+                    }
+                }
+            ],
+            'password' => 'required|string|min:6',
+            'role_id' => 'required|exists:roles,id',
+            'jenis_kelamin' => 'required|in:L,P',
+            'nik_nuptk' => 'nullable|string|max:50',
+            'tempat_lahir' => 'nullable|string|max:255',
+            'tanggal_lahir' => 'nullable|date',
+            'pendidikan' => 'nullable|string|max:255',
+            'jtm' => 'nullable|integer|min:0',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => $request->role_id,
+        ]);
+
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = '/storage/' . $request->file('foto')->store('teachers', 'public');
+        }
+
+        Guru::create([
+            'user_id' => $user->id,
+            'nip' => 'NIP-' . time(),
+            'nama' => $user->name,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'nik_nuptk' => $request->nik_nuptk,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'pendidikan' => $request->pendidikan,
+            'password_plain' => $request->password,
+            'jtm' => $request->jtm ?? 0,
+            'foto' => $fotoPath,
+            'is_aktif' => true,
+        ]);
+
+        return redirect()->back()->with('success', 'Data Guru berhasil ditambahkan.');
+    }
+
+    public function updateGuru(Request $request, $id)
+    {
+        $guru = Guru::findOrFail($id);
+        $user = $guru->user;
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users,email,' . $user->id,
+                function ($attribute, $value, $fail) {
+                    if (!str_ends_with(strtolower($value), '@gmail.com')) {
+                        $fail('Email harus menggunakan domain @gmail.com.');
+                        return;
+                    }
+                }
+            ],
+            'password' => 'nullable|string|min:6',
+            'role_id' => 'required|exists:roles,id',
+            'jenis_kelamin' => 'required|in:L,P',
+            'nik_nuptk' => 'nullable|string|max:50',
+            'tempat_lahir' => 'nullable|string|max:255',
+            'tanggal_lahir' => 'nullable|date',
+            'pendidikan' => 'nullable|string|max:255',
+            'jtm' => 'nullable|integer|min:0',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $userData = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'role_id' => $request->role_id,
+        ];
+
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+
+        $user->update($userData);
+
+        $fotoPath = $guru->foto;
+        if ($request->hasFile('foto')) {
+            $fotoPath = '/storage/' . $request->file('foto')->store('teachers', 'public');
+        }
+
+        $guru->update([
+            'nama' => $request->name,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'nik_nuptk' => $request->nik_nuptk,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'pendidikan' => $request->pendidikan,
+            'password_plain' => $request->filled('password') ? $request->password : $guru->password_plain,
+            'jtm' => $request->jtm ?? 0,
+            'foto' => $fotoPath,
+        ]);
+
+        return redirect()->back()->with('success', 'Data Guru berhasil diperbarui.');
+    }
+
+    public function deleteGuru($id)
+    {
+        $guru = Guru::findOrFail($id);
+        $user = $guru->user;
+        if ($user->id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus diri sendiri.');
+        }
+        $user->delete();
+        return redirect()->back()->with('success', 'Data Guru berhasil dihapus.');
+    }
+
+    public function toggleGuruStatus($id)
+    {
+        $guru = Guru::findOrFail($id);
+        $guru->is_aktif = !$guru->is_aktif;
+        $guru->save();
+
+        $statusStr = $guru->is_aktif ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Guru {$guru->nama} berhasil {$statusStr}.");
     }
 }

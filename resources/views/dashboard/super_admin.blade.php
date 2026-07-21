@@ -1,147 +1,252 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-2xl text-slate-800 leading-tight">
+        <div class="flex justify-between items-center bg-slate-900 px-6 py-4 rounded-xl shadow-lg border border-slate-800">
+            <h2 class="font-bold text-xl text-white tracking-wide flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded bg-emerald-500"></span>
                 {{ __('Super Admin Dashboard') }}
             </h2>
-            <div class="flex items-center gap-2">
-                <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold shadow transition-colors flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    Print Laporan
-                </button>
+            <div class="text-xs font-semibold text-slate-400">
+                TA 2026/2027 • <span class="text-emerald-400 font-bold">Aktif</span>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="py-6 bg-slate-950 min-h-screen">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Toast Notifications -->
             @if(session('success'))
-                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
-                    <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="p-4 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-xl flex items-center gap-3 shadow-md animate-fade-in">
+                    <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span class="text-sm font-semibold">{{ session('success') }}</span>
                 </div>
             @endif
 
             <!-- Welcome Panel -->
-            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <span class="px-3 py-1 rounded bg-white/20 text-white font-semibold text-xs uppercase tracking-wider">Selamat Datang</span>
-                    <h3 class="text-3xl font-extrabold mt-2">Selamat Datang, Super Admin!</h3>
-                    <p class="text-slate-300 text-sm mt-1">
-                        Gunakan menu navigasi di bawah ini atau panel samping untuk mengelola seluruh data operasional sekolah.
+                    <h3 class="text-2xl font-extrabold tracking-tight mt-1">Selamat datang, Super Admin</h3>
+                    <p class="text-slate-400 text-xs mt-1">
+                        Ringkasan operasional madrasah hari ini
                     </p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shrink-0 text-center">
-                    <span class="block text-slate-300 text-xs font-semibold uppercase tracking-wider">Status Server</span>
-                    <span class="text-emerald-400 font-bold text-lg flex items-center gap-2 justify-center mt-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Aktif / Online
+                <div class="bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-800 shrink-0 text-center flex items-center gap-4">
+                    <span class="block text-slate-400 text-xs font-semibold uppercase tracking-wider">SERVER</span>
+                    <span class="text-emerald-400 font-bold text-sm flex items-center gap-1.5 justify-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        ONLINE
                     </span>
                 </div>
             </div>
 
-            <!-- Statistics Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
+            <!-- 8 Statistics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- Card 1: Guru Laki-laki -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        L
                     </div>
                     <div>
-                        <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">User</span>
-                        <span class="text-2xl font-bold text-slate-900">{{ $counts['users'] }}</span>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Guru Laki-laki</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['gurus_l'] }}</span>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100/80 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222m0 9.722v-3.5"/>
-                        </svg>
+
+                <!-- Card 2: Guru Perempuan -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        P
                     </div>
                     <div>
-                        <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">Guru</span>
-                        <span class="text-2xl font-bold text-slate-900">{{ $counts['gurus'] }}</span>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Guru Perempuan</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['gurus_p'] }}</span>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-purple-100/80 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
+
+                <!-- Card 3: Total Guru -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        Σ
                     </div>
                     <div>
-                        <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">Siswa</span>
-                        <span class="text-2xl font-bold text-slate-900">{{ $counts['siswas'] }}</span>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Total Guru</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['gurus_total'] }}</span>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-amber-100/80 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+
+                <!-- Card 4: Siswa Laki-laki -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        L
                     </div>
                     <div>
-                        <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">Kelas</span>
-                        <span class="text-2xl font-bold text-slate-900">{{ $counts['kelas'] }}</span>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Siswa Laki-laki</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['siswas_l'] }}</span>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-100/80 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
+
+                <!-- Card 5: Siswa Perempuan -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-pink-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        P
                     </div>
                     <div>
-                        <span class="block text-slate-500 text-xs font-semibold uppercase tracking-wider">Mapel</span>
-                        <span class="text-2xl font-bold text-slate-900">{{ $counts['mapel'] }}</span>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Siswa Perempuan</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['siswas_p'] }}</span>
+                    </div>
+                </div>
+
+                <!-- Card 6: Total Siswa -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        Σ
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Total Siswa</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['siswas_total'] }}</span>
+                    </div>
+                </div>
+
+                <!-- Card 7: Jumlah Kelas -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        K
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Jumlah Kelas</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['kelas_total'] }}</span>
+                    </div>
+                </div>
+
+                <!-- Card 8: Mata Pelajaran -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center font-extrabold text-lg shadow-inner">
+                        M
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs font-bold uppercase tracking-wider">Mata Pelajaran</span>
+                        <span class="text-3xl font-extrabold text-slate-950">{{ $counts['mapel_total'] }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Access Links -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-bold text-slate-900">Akses Cepat Pengelolaan</h3>
-                <div class="grid md:grid-cols-3 gap-6">
-                    <a href="{{ route('admin.users.index') }}" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-lg transition-all flex flex-col justify-between h-40">
-                        <div class="flex justify-between items-start">
-                            <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors flex items-center justify-center">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <!-- Bottom Row Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Absensi Siswa Hari Ini (8/12 columns) -->
+                <div class="lg:col-span-8 bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold text-slate-900">Absensi Siswa Hari Ini</h3>
+                                <p class="text-xs text-slate-500">
+                                    {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }} • {{ $classes_filled_count }} dari {{ $classes_total_count }} kelas sudah mengisi
+                                </p>
                             </div>
-                            <svg class="w-5 h-5 text-slate-300 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </div>
-                        <div>
-                            <h4 class="font-bold text-slate-950 text-base">Kelola Pengguna</h4>
-                            <p class="text-xs text-slate-500 mt-1">Daftar pengguna, buat akun baru, RBAC, dan import/export massal.</p>
-                        </div>
-                    </a>
 
-                    <a href="{{ route('admin.kelas.index') }}" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-lg transition-all flex flex-col justify-between h-40">
-                        <div class="flex justify-between items-start">
-                            <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-700 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors flex items-center justify-center">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <!-- Progress / Count Blocks -->
+                        <div class="grid grid-cols-5 gap-3 mb-6">
+                            <!-- Hadir -->
+                            <div class="p-3 bg-slate-50 border-l-4 border-emerald-500 rounded-lg">
+                                <span class="block text-[10px] uppercase font-bold text-slate-500">Hadir</span>
+                                <span class="text-lg font-black text-slate-900">{{ $attendance_stats['hadir'] }}</span>
                             </div>
-                            <svg class="w-5 h-5 text-slate-300 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <!-- Sakit -->
+                            <div class="p-3 bg-slate-50 border-l-4 border-blue-500 rounded-lg">
+                                <span class="block text-[10px] uppercase font-bold text-slate-500">Sakit</span>
+                                <span class="text-lg font-black text-slate-900">{{ $attendance_stats['sakit'] }}</span>
+                            </div>
+                            <!-- Izin -->
+                            <div class="p-3 bg-slate-50 border-l-4 border-amber-500 rounded-lg">
+                                <span class="block text-[10px] uppercase font-bold text-slate-500">Izin</span>
+                                <span class="text-lg font-black text-slate-900">{{ $attendance_stats['izin'] }}</span>
+                            </div>
+                            <!-- Alpa -->
+                            <div class="p-3 bg-slate-50 border-l-4 border-rose-500 rounded-lg">
+                                <span class="block text-[10px] uppercase font-bold text-slate-500">Alpa</span>
+                                <span class="text-lg font-black text-slate-900">{{ $attendance_stats['alpa'] }}</span>
+                            </div>
+                            <!-- Terlambat -->
+                            <div class="p-3 bg-slate-50 border-l-4 border-purple-500 rounded-lg">
+                                <span class="block text-[10px] uppercase font-bold text-slate-500">Terlambat</span>
+                                <span class="text-lg font-black text-slate-900">{{ $attendance_stats['terlambat'] }}</span>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="font-bold text-slate-950 text-base">Kelola Kelas</h4>
-                            <p class="text-xs text-slate-500 mt-1">Daftar rombongan belajar (rombel) dan penugasan Wali Kelas.</p>
-                        </div>
-                    </a>
 
-                    <a href="{{ route('admin.mapel.index') }}" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-purple-500 hover:shadow-lg transition-all flex flex-col justify-between h-40">
-                        <div class="flex justify-between items-start">
-                            <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-700 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors flex items-center justify-center">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        <!-- Table of Classes -->
+                        <div class="overflow-x-auto max-h-80 overflow-y-auto pr-1">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                        <th class="py-2">Kelas</th>
+                                        <th class="py-2">Kehadiran</th>
+                                        <th class="py-2 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50 text-sm">
+                                    @foreach($class_status_list as $cStat)
+                                        <tr>
+                                            <td class="py-3 font-bold text-slate-900">{{ $cStat['kelas']->nama_kelas }}</td>
+                                            <td class="py-3 font-semibold text-slate-500">
+                                                @if($cStat['status'] === 'Selesai')
+                                                    {{ $cStat['total_students'] }}/{{ $cStat['total_students'] }}
+                                                @else
+                                                    0/{{ $cStat['total_students'] }}
+                                                @endif
+                                            </td>
+                                            <td class="py-3 text-right">
+                                                @if($cStat['status'] === 'Selesai')
+                                                    <span class="px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-sm">
+                                                        Selesai
+                                                    </span>
+                                                @else
+                                                    <span class="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold shadow-sm animate-pulse">
+                                                        Belum Isi
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Aktivitas Terbaru (4/12 columns) -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col">
+                    <h3 class="text-lg font-extrabold text-slate-900 mb-4">Aktivitas Terbaru</h3>
+                    <div class="space-y-4 flex-1 overflow-y-auto max-h-[420px] pr-1">
+                        @forelse($latest_activities as $activity)
+                            @php
+                                $actorName = $activity->user ? $activity->user->name : 'Sistem';
+                                $initial = strtoupper(substr($actorName, 0, 1));
+                                // Choose avatar color dynamically
+                                $colorClasses = 'bg-emerald-100 text-emerald-800';
+                                if ($initial === 'A') $colorClasses = 'bg-blue-100 text-blue-800';
+                                if ($initial === 'G') $colorClasses = 'bg-indigo-100 text-indigo-800';
+                                if ($initial === 'B') $colorClasses = 'bg-pink-100 text-pink-800';
+                                if ($initial === 'H') $colorClasses = 'bg-teal-100 text-teal-800';
+                            @endphp
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 {{ $colorClasses }}">
+                                    {{ $initial }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-sm font-semibold text-slate-900">
+                                        {{ $actorName }}
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-0.5">
+                                        {{ $activity->action }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-1">
+                                        {{ $activity->created_at->diffForHumans() }}
+                                    </div>
+                                </div>
                             </div>
-                            <svg class="w-5 h-5 text-slate-300 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-950 text-base">Mata Pelajaran</h4>
-                            <p class="text-xs text-slate-500 mt-1">Daftar kurikulum mata pelajaran (mapel) beserta kode mapel.</p>
-                        </div>
-                    </a>
+                        @empty
+                            <p class="text-xs text-slate-400 text-center py-6">Tidak ada aktivitas terbaru.</p>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>

@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editKelas: { id: '', nama_kelas: '', wali_kelas_id: '' } }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editKelas: { id: '', nama_kelas: '', wali_kelas_id: '' }, searchQuery: '', selectAll: false, toggleAll() { const checkboxes = document.querySelectorAll('.item-checkbox'); checkboxes.forEach(cb => { cb.checked = this.selectAll; }); } }">
             <!-- Toast Notifications -->
             @if(session('success'))
                 <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
@@ -26,14 +26,26 @@
                 <!-- Classes Table (Left Column) -->
                 <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between">
                     <div>
-                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                             <h3 class="font-bold text-lg text-slate-900">Daftar Kelas</h3>
-                            <span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold text-[10px] uppercase tracking-wider">{{ count($kelas) }} Kelas Terdaftar</span>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <input type="text" x-model="searchQuery" placeholder="Cari kelas..." class="pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-emerald-500 w-36">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <button type="button" @click="window.bulkDeleteSelected('.item-checkbox', '{{ csrf_token() }}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Terpilih
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-600">
                                 <thead class="bg-slate-50/50 text-slate-400 font-semibold text-xs uppercase tracking-wider border-b border-slate-100">
                                     <tr>
+                                        <th class="px-6 py-3 w-10">
+                                            <input type="checkbox" x-model="selectAll" @change="toggleAll()" class="rounded border-slate-300 text-emerald-650 focus:ring-emerald-500">
+                                        </th>
                                         <th class="px-6 py-3">Nama Kelas</th>
                                         <th class="px-6 py-3">Wali Kelas</th>
                                         <th class="px-6 py-3 text-center">Aksi</th>
@@ -41,7 +53,11 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($kelas as $kls)
-                                        <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <tr class="hover:bg-slate-50/40 transition-colors"
+                                            x-show="searchQuery === '' || '{{ strtolower(addslashes($kls->nama_kelas)) }}'.includes(searchQuery.toLowerCase())">
+                                            <td class="px-6 py-4">
+                                                <input type="checkbox" class="item-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('admin.kelas.delete', $kls->id) }}">
+                                            </td>
                                             <td class="px-6 py-4 font-semibold text-slate-900">{{ $kls->nama_kelas }}</td>
                                             <td class="px-6 py-4">{{ $kls->waliGuru ? $kls->waliGuru->nama : 'Belum ditentukan' }}</td>
                                             <td class="px-6 py-4 text-center">
@@ -69,7 +85,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="px-6 py-12 text-center text-slate-400 text-sm">
+                                            <td colspan="4" class="px-6 py-12 text-center text-slate-400 text-sm">
                                                 Belum ada data kelas yang terdaftar.
                                             </td>
                                         </tr>
