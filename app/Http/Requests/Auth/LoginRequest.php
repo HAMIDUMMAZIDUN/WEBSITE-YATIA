@@ -43,11 +43,18 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt(['nik' => $this->input('nik'), 'password' => $this->input('password')], $this->boolean('remember'))) {
+        $login = $this->input('nik');
+
+        $user = \App\Models\User::where('nik', $login)
+            ->orWhere('username', $login)
+            ->orWhere('email', $login)
+            ->first();
+
+        if (!$user || ! Auth::attempt(['id' => $user->id, 'password' => $this->input('password')], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'nik' => __('NIK atau kata sandi salah. Silakan coba lagi.'),
+                'nik' => __('NIK, Username, atau kata sandi salah. Silakan coba lagi.'),
             ]);
         }
 

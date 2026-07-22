@@ -1,12 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-display font-extrabold text-2xl text-slate-900 leading-tight">
-            Manajemen Mata Pelajaran (Kurikulum)
+            Manajemen Mata Pelajaran (Kurikulum) - {{ $selected_unit === 'MTs' ? 'Tsanawiyah (MTs)' : 'Aliyah (MA)' }}
         </h2>
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editMapel: { id: '', nama_mapel: '', kode_mapel: '' }, searchQuery: '', selectAll: false, toggleAll() { const checkboxes = document.querySelectorAll('.item-checkbox'); checkboxes.forEach(cb => { cb.checked = this.selectAll; }); } }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ editModalOpen: false, editMapel: { id: '', nama_mapel: '', kode_mapel: '', unit: '' }, searchQuery: '', selectAll: false, toggleAll() { const checkboxes = document.querySelectorAll('.item-checkbox'); checkboxes.forEach(cb => { cb.checked = this.selectAll; }); } }">
             <!-- Toast Notifications -->
             @if(session('success'))
                 <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-3">
@@ -27,7 +27,7 @@
                 <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
-                            <h3 class="font-bold text-lg text-slate-900">Daftar Mata Pelajaran</h3>
+                            <h3 class="font-bold text-lg text-slate-900">Daftar Mata Pelajaran {{ $selected_unit === 'MTs' ? 'MTs' : 'MA' }}</h3>
                             <div class="flex items-center gap-2">
                                 <div class="relative">
                                     <input type="text" x-model="searchQuery" placeholder="Cari mapel..." class="pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-emerald-500 w-36">
@@ -67,7 +67,8 @@
                                                             editMapel = { 
                                                                 id: '{{ $mpl->id }}', 
                                                                 nama_mapel: '{{ addslashes($mpl->nama_mapel) }}', 
-                                                                kode_mapel: '{{ addslashes($mpl->kode_mapel) }}' 
+                                                                kode_mapel: '{{ addslashes($mpl->kode_mapel) }}',
+                                                                unit: '{{ $mpl->unit }}'
                                                             }; 
                                                             editModalOpen = true;
                                                         "
@@ -114,6 +115,14 @@
                                 <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kode Mapel</label>
                                 <input type="text" name="kode_mapel" required placeholder="BIO-05" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
                             </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</label>
+                                <select name="unit" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                    <option value="MTs" {{ $selected_unit === 'MTs' ? 'selected' : '' }}>MTs (Tsanawiyah)</option>
+                                    <option value="MA" {{ $selected_unit === 'MA' ? 'selected' : '' }}>MA (Aliyah)</option>
+                                    <option value="Semua" {{ $selected_unit === 'Semua' ? 'selected' : '' }}>Semua</option>
+                                </select>
+                            </div>
                             <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-colors">
                                 Simpan Mapel
                             </button>
@@ -123,7 +132,7 @@
                         <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
                             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Import / Export Masal</span>
                             <div class="flex gap-2">
-                                <a href="{{ route('data.template', 'mapel') }}" class="flex-1 text-center py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-150 transition-colors">
+                                <a href="{{ route('data.template', 'mapel') }}" class="flex-1 text-center py-2 bg-slate-55 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-150 transition-colors">
                                     Template
                                 </a>
                                 <a href="{{ route('data.export', 'mapel') }}" class="flex-1 text-center py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-150 transition-colors">
@@ -161,6 +170,14 @@
                         <div class="space-y-1">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kode Mapel</label>
                             <input type="text" name="kode_mapel" required x-model="editMapel.kode_mapel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</label>
+                            <select name="unit" x-model="editMapel.unit" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <option value="MTs">MTs (Tsanawiyah)</option>
+                                <option value="MA">MA (Aliyah)</option>
+                                <option value="Semua">Semua</option>
+                            </select>
                         </div>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="editModalOpen = false" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">

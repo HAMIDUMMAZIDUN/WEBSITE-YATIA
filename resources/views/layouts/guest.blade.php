@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="{{ (isset($school_profile) && $school_profile->theme_mode === 'dark') ? 'dark' : '' }}">
 
 <head>
     <meta charset="utf-8">
@@ -17,15 +17,6 @@
     <!-- Tailwind CSS & JS from Laravel Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <script>
-        // Inline script to prevent theme flash
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -37,7 +28,7 @@
     </style>
 </head>
 
-<body class="relative text-slate-800 dark:text-slate-100 antialiased min-h-screen flex items-center justify-center p-4 transition-colors duration-300 bg-cover bg-center bg-no-repeat" style="background-image: url('{{ asset('images/bg-school.jpg') }}');">
+<body class="relative text-black dark:text-white antialiased min-h-screen flex items-center justify-center p-4 transition-colors duration-300 bg-cover bg-center bg-no-repeat" style="background-image: url('{{ asset('images/bg-school.jpg') }}');">
     <!-- Backdrop Overlay -->
     <div class="absolute inset-0 bg-slate-950/75 dark:bg-slate-950/85 backdrop-blur-[3px] pointer-events-none z-0"></div>
 
@@ -88,10 +79,8 @@
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
             }
         }
     </script>

@@ -44,7 +44,7 @@
                     </svg>
                 </div>
                 <input id="password"
-                       :type="showPassword ? 'text' : 'password'"
+                       x-bind:type="showPassword ? 'text' : 'password'"
                        name="password"
                        required
                        autocomplete="current-password"

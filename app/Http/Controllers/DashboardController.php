@@ -161,22 +161,21 @@ class DashboardController extends Controller
     private function siswaDashboard()
     {
         $user = Auth::user();
-        $siswa = $user->siswa;
 
-        if (!$siswa) {
-            abort(404, 'Detail siswa tidak ditemukan.');
+        // Check if the student is assigned as an attendance officer
+        $assignment = \App\Models\AttendanceOfficerAssignment::where('user_id', $user->id)
+            ->where('active', true)
+            ->first();
+
+        if ($assignment) {
+            // Redirect to the attendance input page for their assigned class
+            return redirect()->route('absensi.officer.index', $assignment->class_id);
         }
 
-        $data = [
-            'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-            'jadwals' => JadwalPelajaran::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
-            'materiTugas' => MateriTugas::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
-            'nilais' => Nilai::with(['mataPelajaran', 'guru'])->where('siswa_id', $siswa->id)->get(),
-            'presensis' => Presensi::where('siswa_id', $siswa->id)->get(),
-            'pelanggarans' => PelanggaranBk::with('guruBk')->where('siswa_id', $siswa->id)->get(),
-        ];
-        return view('dashboard.admin.siswa', $data);
+        // Fallback: generic empty page for unassigned students
+        return view('dashboard.absensi_empty', [
+            'message' => 'Anda belum ditugaskan sebagai petugas absensi. Silakan hubungi Wali Kelas Anda.',
+        ]);
     }
 
     private function guruBkDashboard()
@@ -200,6 +199,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'nullable|string|max:255|unique:users,username',
             'nik'  => 'nullable|string|max:100|unique:users,nik',
             'email' => [
                 'required',
@@ -232,11 +232,21 @@ class DashboardController extends Controller
             $nik = $baseNik . $suffix++;
         }
 
+        // Determine username
+        $username = $request->username ?: $nik;
+        $baseUsername = $username;
+        $uSuffix = 1;
+        while (\App\Models\User::where('username', $username)->exists()) {
+            $username = $baseUsername . $uSuffix++;
+        }
+
         $user = User::create([
             'name' => $request->name,
             'nik'  => $nik,
+            'username' => $username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'password_plain' => $request->password,
             'role_id' => $request->role_id,
         ]);
 
@@ -248,6 +258,7 @@ class DashboardController extends Controller
                 'nama' => $user->name,
                 'nip' => 'NIP-' . time(),
                 'jenis_kelamin' => $request->jenis_kelamin,
+                'password_plain' => $request->password,
             ]);
         } elseif ($role->name === 'siswa') {
             Siswa::create([
@@ -276,6 +287,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
             'wali_kelas_id' => 'nullable|exists:gurus,id',
+            'unit' => 'required|in:MTs,MA,Semua',
         ]);
 
         Kelas::create($request->all());
@@ -287,6 +299,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_mapel' => 'required|string|max:255',
             'kode_mapel' => 'required|string|max:50|unique:mata_pelajarans',
+            'unit' => 'required|in:MTs,MA,Semua',
         ]);
 
         MataPelajaran::create($request->all());
@@ -884,6 +897,7 @@ class DashboardController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'email' => [
                 'required',
                 'string',
@@ -908,12 +922,14 @@ class DashboardController extends Controller
 
         $userData = [
             'name' => $request->name,
+            'username' => $request->username,
             'email' => $request->email,
             'role_id' => $request->role_id,
         ];
 
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+            $userData['password_plain'] = $request->password;
         }
 
         $user->update($userData);
@@ -927,12 +943,17 @@ class DashboardController extends Controller
                     'nama' => $user->name,
                     'nip' => 'NIP-' . time(),
                     'jenis_kelamin' => $request->jenis_kelamin,
+                    'password_plain' => $user->password_plain,
                 ]);
             } else {
-                $user->guru->update([
+                $guruData = [
                     'nama' => $user->name,
                     'jenis_kelamin' => $request->jenis_kelamin,
-                ]);
+                ];
+                if ($request->filled('password')) {
+                    $guruData['password_plain'] = $request->password;
+                }
+                $user->guru->update($guruData);
             }
         } elseif ($role->name === 'siswa') {
             if (!$user->siswa) {
@@ -955,16 +976,23 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'User berhasil diperbarui.');
     }
 
-    public function kelasIndex()
+    public function kelasIndex(Request $request)
     {
         $user = Auth::user();
         if (!$user->isSuperAdmin()) {
             abort(403);
         }
 
+        $unit = $request->query('unit', 'MTs');
+        $query = Kelas::with('waliGuru');
+        if (in_array($unit, ['MTs', 'MA'])) {
+            $query->where('unit', $unit);
+        }
+
         $data = [
-            'kelas' => Kelas::with('waliGuru')->get(),
+            'kelas' => $query->get(),
             'gurus' => Guru::all(),
+            'selected_unit' => $unit,
         ];
         return view('dashboard.admin.kelas', $data);
     }
@@ -975,6 +1003,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
             'wali_kelas_id' => 'nullable|exists:gurus,id',
+            'unit' => 'required|in:MTs,MA,Semua',
         ]);
 
         $kelas->update($request->all());
@@ -988,15 +1017,22 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Kelas berhasil dihapus.');
     }
 
-    public function mapelIndex()
+    public function mapelIndex(Request $request)
     {
         $user = Auth::user();
         if (!$user->isSuperAdmin()) {
             abort(403);
         }
 
+        $unit = $request->query('unit', 'MTs');
+        $query = MataPelajaran::query();
+        if (in_array($unit, ['MTs', 'MA'])) {
+            $query->whereIn('unit', [$unit, 'Semua']);
+        }
+
         $data = [
-            'mapel' => MataPelajaran::all(),
+            'mapel' => $query->get(),
+            'selected_unit' => $unit,
         ];
         return view('dashboard.admin.mapel', $data);
     }
@@ -1007,6 +1043,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_mapel' => 'required|string|max:255',
             'kode_mapel' => 'required|string|max:50|unique:mata_pelajarans,kode_mapel,' . $mapel->id,
+            'unit' => 'required|in:MTs,MA,Semua',
         ]);
 
         $mapel->update($request->all());
@@ -1078,83 +1115,131 @@ class DashboardController extends Controller
         return view('dashboard.wali_kelas.wali_absensi', $data);
     }
 
-    public function siswaElearning()
+    // =============================================================
+    // ADMIN ABSENSI MANAGEMENT
+    // =============================================================
+
+    public function adminAbsensiIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSiswa()) {
+        if (!$user->isSuperAdmin()) {
             abort(403);
         }
-        $siswa = $user->siswa;
-        if (!$siswa) {
-            abort(404, 'Detail siswa tidak ditemukan.');
-        }
 
-        $data = [
-            'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-            'materiTugas' => MateriTugas::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
-        ];
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
 
-        return view('dashboard.siswa.siswa_elearning', $data);
+        // All officer assignments with relations
+        $assignments = \App\Models\AttendanceOfficerAssignment::with(['user.siswa', 'class', 'academicYear'])
+            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->orderBy('class_id')
+            ->orderByDesc('active')
+            ->get();
+
+        // All classes for the assign form
+        $kelasAll = Kelas::orderBy('nama_kelas')->get();
+
+        // All users with siswa role who have a siswa record
+        $siswaUsers = User::with(['siswa.kelas', 'role'])
+            ->whereHas('role', fn($q) => $q->where('name', 'siswa'))
+            ->whereHas('siswa')
+            ->orderBy('name')
+            ->get();
+
+        // Attendance summary per class for today
+        $today = Carbon::today()->toDateString();
+        $submissionsByClass = \App\Models\AttendanceSubmission::with('submittedBy')
+            ->where('date', $today)
+            ->get()
+            ->keyBy('class_id');
+
+        $classSummary = $kelasAll->map(function($kelas) use ($today, $submissionsByClass, $assignments, $activeYear) {
+            $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
+            $filled = \App\Models\AttendanceDaily::where('class_id', $kelas->id)->where('date', $today)->count();
+            $submission = $submissionsByClass->get($kelas->id);
+            $officers = $assignments->where('class_id', $kelas->id)->where('active', true);
+            return [
+                'kelas'      => $kelas,
+                'total'      => $totalSiswa,
+                'filled'     => $filled,
+                'submission' => $submission,
+                'officers'   => $officers,
+            ];
+        });
+
+        return view('dashboard.admin.absensi', [
+            'assignments'   => $assignments,
+            'kelasAll'      => $kelasAll,
+            'siswaUsers'    => $siswaUsers,
+            'classSummary'  => $classSummary,
+            'activeYear'    => $activeYear,
+            'today'         => $today,
+        ]);
     }
 
-    public function siswaCbt()
+    public function adminAbsensiAssign(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSiswa()) {
+        if (!$user->isSuperAdmin()) {
             abort(403);
         }
-        $siswa = $user->siswa;
-        if (!$siswa) {
-            abort(404, 'Detail siswa tidak ditemukan.');
+
+        $request->validate([
+            'user_id'  => 'required|exists:users,id',
+            'class_id' => 'required|exists:kelas,id',
+        ]);
+
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+        if (!$activeYear) {
+            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif. Aktifkan tahun ajaran terlebih dahulu.');
         }
 
-        $data = [
-            'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-        ];
+        // Check if already exists
+        $existing = \App\Models\AttendanceOfficerAssignment::where('user_id', $request->user_id)
+            ->where('class_id', $request->class_id)
+            ->where('academic_year_id', $activeYear->id)
+            ->first();
 
-        return view('dashboard.siswa.siswa_cbt', $data);
+        if ($existing) {
+            return redirect()->back()->with('error', 'Siswa tersebut sudah pernah ditugaskan untuk kelas ini. Gunakan tombol Toggle untuk mengaktifkan kembali.');
+        }
+
+        \App\Models\AttendanceOfficerAssignment::create([
+            'user_id'          => $request->user_id,
+            'class_id'         => $request->class_id,
+            'academic_year_id' => $activeYear->id,
+            'active'           => true,
+        ]);
+
+        $targetUser = User::find($request->user_id);
+        $targetKelas = Kelas::find($request->class_id);
+        return redirect()->back()->with('success', ($targetUser->name ?? 'Siswa') . ' berhasil ditugaskan sebagai petugas absensi kelas ' . ($targetKelas->nama_kelas ?? '') . '.');
     }
 
-    public function siswaJadwal()
+    public function adminAbsensiRevoke($id)
     {
         $user = Auth::user();
-        if (!$user->isSiswa()) {
+        if (!$user->isSuperAdmin()) {
             abort(403);
         }
-        $siswa = $user->siswa;
-        if (!$siswa) {
-            abort(404, 'Detail siswa tidak ditemukan.');
-        }
 
-        $data = [
-            'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-            'jadwals' => JadwalPelajaran::with(['mataPelajaran', 'guru'])->where('kelas_id', $siswa->kelas_id)->get(),
-        ];
+        $assignment = \App\Models\AttendanceOfficerAssignment::findOrFail($id);
+        $assignment->delete();
 
-        return view('dashboard.siswa.siswa_jadwal', $data);
+        return redirect()->back()->with('success', 'Penugasan petugas absensi berhasil dihapus.');
     }
 
-    public function siswaPresensi()
+    public function adminAbsensiToggle($id)
     {
         $user = Auth::user();
-        if (!$user->isSiswa()) {
+        if (!$user->isSuperAdmin()) {
             abort(403);
         }
-        $siswa = $user->siswa;
-        if (!$siswa) {
-            abort(404, 'Detail siswa tidak ditemukan.');
-        }
 
-        $data = [
-            'siswa' => $siswa,
-            'kelas' => $siswa->kelas,
-            'presensis' => Presensi::where('siswa_id', $siswa->id)->get(),
-        ];
+        $assignment = \App\Models\AttendanceOfficerAssignment::findOrFail($id);
+        $assignment->update(['active' => !$assignment->active]);
+        $status = $assignment->active ? 'diaktifkan' : 'dinonaktifkan';
 
-        return view('dashboard.siswa.siswa_presensi', $data);
+        return redirect()->back()->with('success', 'Penugasan petugas absensi berhasil ' . $status . '.');
     }
 
     public function adminUsersIndex()
@@ -1662,7 +1747,15 @@ class DashboardController extends Controller
             abort(403);
         }
 
+        $unit = $request->query('unit', 'MTs');
+
         $query = Siswa::with(['kelas', 'user']);
+
+        if (in_array($unit, ['MTs', 'MA'])) {
+            $query->whereHas('kelas', function($q) use ($unit) {
+                $q->where('unit', $unit);
+            });
+        }
 
         // Search Filter
         if ($request->filled('search')) {
@@ -1687,9 +1780,9 @@ class DashboardController extends Controller
         }
 
         $siswas = $query->paginate(20)->withQueryString();
-        $kelas = Kelas::all();
+        $kelas = Kelas::where('unit', $unit)->get();
 
-        return view('dashboard.admin.siswa', compact('siswas', 'kelas'));
+        return view('dashboard.admin.siswa', compact('siswas', 'kelas', 'unit'));
     }
 
     public function storeSiswa(Request $request)

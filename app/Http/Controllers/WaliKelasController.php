@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
 use App\Models\Kelas;
+use App\Models\User;
 use App\Models\AttendanceDaily;
 use App\Models\AttendanceSubmission;
 use App\Models\AttendanceVerification;
 use App\Models\AttendanceAuditLog;
+use App\Models\AttendanceOfficerAssignment;
 use App\Models\AcademicSnapshot;
 use App\Models\StudentIntervention;
 use App\Models\BkReferral;
@@ -301,5 +303,107 @@ class WaliKelasController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Halaman Manajemen Petugas Absensi.
+     * Wali Kelas bisa melihat dan menugaskan siswa sebagai petugas absensi.
+     */
+    public function officerIndex()
+    {
+        $homeroom = $this->getActiveHomeroom();
+        if (!$homeroom) {
+            abort(403, 'Anda tidak ditugaskan sebagai Wali Kelas aktif.');
+        }
+
+        $kelas = $homeroom->class;
+        $activeYear = AcademicYear::where('active', true)->first();
+
+        // Get all students in the class WITH their user accounts
+        $siswas = Siswa::with('user')
+            ->where('kelas_id', $kelas->id)
+            ->orderBy('nama', 'asc')
+            ->get();
+
+        // Get current active officers for this class
+        $assignments = AttendanceOfficerAssignment::with('user')
+            ->where('class_id', $kelas->id)
+            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('dashboard.wali_kelas.wali_officer', [
+            'kelas'       => $kelas,
+            'siswas'      => $siswas,
+            'assignments' => $assignments,
+            'activeYear'  => $activeYear,
+        ]);
+    }
+
+    /**
+     * Tugaskan siswa sebagai petugas absensi.
+     */
+    public function assignOfficer(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $homeroom = $this->getActiveHomeroom();
+        if (!$homeroom) {
+            abort(403);
+        }
+
+        $activeYear = AcademicYear::where('active', true)->first();
+        if (!$activeYear) {
+            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif.');
+        }
+
+        // Verify the user is indeed a siswa in this class
+        $user = User::with('siswa')->findOrFail($request->user_id);
+        if (!$user->siswa || $user->siswa->kelas_id !== $homeroom->class_id) {
+            return redirect()->back()->with('error', 'Siswa tidak ditemukan atau bukan anggota kelas ini.');
+        }
+
+        // Check if already assigned
+        $existing = AttendanceOfficerAssignment::where('user_id', $user->id)
+            ->where('class_id', $homeroom->class_id)
+            ->where('academic_year_id', $activeYear->id)
+            ->first();
+
+        if ($existing) {
+            // Toggle active/inactive
+            $existing->update(['active' => !$existing->active]);
+            $msg = $existing->active ? 'Petugas absensi berhasil diaktifkan kembali.' : 'Penugasan petugas absensi dinonaktifkan.';
+            return redirect()->back()->with('success', $msg);
+        }
+
+        AttendanceOfficerAssignment::create([
+            'user_id'          => $user->id,
+            'class_id'         => $homeroom->class_id,
+            'academic_year_id' => $activeYear->id,
+            'active'           => true,
+        ]);
+
+        return redirect()->back()->with('success', 'Siswa berhasil ditugaskan sebagai Petugas Absensi kelas ' . $homeroom->class->nama_kelas . '.');
+    }
+
+    /**
+     * Cabut penugasan petugas absensi.
+     */
+    public function revokeOfficer($assignmentId)
+    {
+        $homeroom = $this->getActiveHomeroom();
+        if (!$homeroom) {
+            abort(403);
+        }
+
+        $assignment = AttendanceOfficerAssignment::where('id', $assignmentId)
+            ->where('class_id', $homeroom->class_id)
+            ->firstOrFail();
+
+        $assignment->delete();
+
+        return redirect()->back()->with('success', 'Penugasan petugas absensi berhasil dicabut.');
     }
 }

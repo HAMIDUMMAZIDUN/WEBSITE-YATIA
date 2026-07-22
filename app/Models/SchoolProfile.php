@@ -27,5 +27,6 @@ class SchoolProfile extends Model
         'logo_path',
         'stempel_path',
         'tanda_tangan_path',
+        'theme_mode',
     ];
 }

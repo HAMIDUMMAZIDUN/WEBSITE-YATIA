@@ -39,17 +39,24 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        if ($request->user()->isSiswa()) {
-            abort(403, 'Siswa tidak dapat mengubah profil secara langsung. Hubungi Wali Kelas Anda.');
+        $user = $request->user();
+        $validatedData = $request->validated();
+
+        if ($request->hasFile('photo_profile')) {
+            if ($user->photo_profile) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->photo_profile);
+            }
+            $path = $request->file('photo_profile')->store('avatars', 'public');
+            $validatedData['photo_profile'] = $path;
         }
 
-        $request->user()->fill($request->validated());
+        $user->fill($validatedData);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

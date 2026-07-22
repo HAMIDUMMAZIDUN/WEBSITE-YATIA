@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ (isset($school_profile) && $school_profile->theme_mode === 'dark') ? 'dark' : '' }}">
 
 <head>
     <meta charset="utf-8">
@@ -17,20 +17,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script>
-        // Inline script to prevent theme flash
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
             }
         }
 
@@ -165,6 +156,86 @@
             border: 1px solid #bef264 !important;
             box-shadow: 0 4px 20px 0 rgba(230, 255, 0, 0.35) !important;
         }
+
+        /* Centralized theme overrides for dark mode */
+        html.dark .bg-white,
+        html.dark aside.bg-white,
+        html.dark div.bg-white,
+        html.dark section.bg-white {
+            background-color: #0f172a !important; /* Space navy */
+            border-color: rgba(51, 65, 85, 0.5) !important;
+            box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        html.dark .text-slate-800,
+        html.dark .text-slate-900,
+        html.dark .text-slate-950,
+        html.dark h1,
+        html.dark h2,
+        html.dark h3,
+        html.dark h4,
+        html.dark h5,
+        html.dark h6 {
+            color: #ffffff !important;
+        }
+
+        html.dark .text-slate-650,
+        html.dark .text-slate-600,
+        html.dark .text-slate-750,
+        html.dark .text-slate-700,
+        html.dark .text-slate-500 {
+            color: #cbd5e1 !important; /* light slate */
+        }
+
+        html.dark .bg-slate-50,
+        html.dark .bg-slate-100 {
+            background-color: #1e293b !important; /* slate-800 */
+            border-color: #334155 !important;
+        }
+
+        html.dark .bg-slate-900 {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+        }
+
+        html.dark .border-slate-100,
+        html.dark .border-slate-200 {
+            border-color: rgba(51, 65, 85, 0.5) !important;
+        }
+
+        html.dark input,
+        html.dark select,
+        html.dark textarea {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark input::placeholder,
+        html.dark textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        html.dark .hover\:bg-slate-50:hover,
+        html.dark .hover\:bg-slate-100:hover,
+        html.dark .hover\:bg-slate-800:hover {
+            background-color: #334155 !important;
+        }
+
+        html.dark .bg-emerald-50 {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border-color: rgba(16, 185, 129, 0.3) !important;
+        }
+        html.dark .text-emerald-800 {
+            color: #34d399 !important; /* emerald-400 */
+        }
+
+        /* Glassmorphism avatars for audit logs in dark mode */
+        html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; }
+        html.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+        html.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.15) !important; color: #818cf8 !important; }
+        html.dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.15) !important; color: #f472b6 !important; }
+        html.dark .bg-teal-100 { background-color: rgba(20, 184, 166, 0.15) !important; color: #2dd4bf !important; }
     </style>
 </head>
 
@@ -178,7 +249,7 @@
             }
         }
     }" @hashchange.window="activeHash = window.location.hash || '#dashboard'"
-    class="font-sans antialiased text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+    class="font-sans antialiased text-black dark:text-white bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     {{-- Outer flex container: sidebar + content sit side by side --}}
     <div class="flex min-h-screen bg-slate-50/50 dark:bg-slate-950">
 

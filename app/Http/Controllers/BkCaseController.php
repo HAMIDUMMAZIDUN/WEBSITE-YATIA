@@ -15,25 +15,21 @@ use Carbon\Carbon;
 
 class BkCaseController extends Controller
 {
-    public function __construct()
+    private function checkGuruBk()
     {
-        // Enforce that only Guru BK users can access these actions
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user || !$user->isGuruBk()) {
-                // Log unauthorized access attempt
-                AuditLog::create([
-                    'user_id' => $user ? $user->id : null,
-                    'action' => 'unauthorized_access_attempt',
-                    'entity' => 'bk_cases',
-                    'entity_id' => null,
-                    'old_value' => null,
-                    'new_value' => 'Attempted to access BK Case Management',
-                ]);
-                abort(403, 'Akses Ditolak. Halaman ini hanya boleh diakses oleh Guru Bimbingan Konseling (BK).');
-            }
-            return $next($request);
-        });
+        $user = Auth::user();
+        if (!$user || !$user->isGuruBk()) {
+            // Log unauthorized access attempt
+            AuditLog::create([
+                'user_id' => $user ? $user->id : null,
+                'action' => 'unauthorized_access_attempt',
+                'entity' => 'bk_cases',
+                'entity_id' => null,
+                'old_value' => null,
+                'new_value' => 'Attempted to access BK Case Management',
+            ]);
+            abort(403, 'Akses Ditolak. Halaman ini hanya boleh diakses oleh Guru Bimbingan Konseling (BK).');
+        }
     }
 
     /**
@@ -41,6 +37,7 @@ class BkCaseController extends Controller
      */
     public function triaseIndex()
     {
+        $this->checkGuruBk();
         $user = Auth::user();
 
         // Get referrals that are still pending
@@ -66,6 +63,7 @@ class BkCaseController extends Controller
      */
     public function processTriase(Request $request, $id)
     {
+        $this->checkGuruBk();
         $request->validate([
             'priority' => 'required|in:rendah,sedang,tinggi,darurat',
             'goal' => 'required|string|max:1000',
@@ -131,6 +129,7 @@ class BkCaseController extends Controller
      */
     public function show($id)
     {
+        $this->checkGuruBk();
         $case = BkCase::with([
             'referral.student.kelas',
             'counselor.user',
@@ -158,6 +157,7 @@ class BkCaseController extends Controller
      */
     public function closeCase(Request $request, $id)
     {
+        $this->checkGuruBk();
         $case = BkCase::findOrFail($id);
         $user = Auth::user();
 

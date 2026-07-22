@@ -78,6 +78,13 @@
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Website Resmi</label>
                             <input type="text" name="website" value="{{ $profile->website }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
                         </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mode Tampilan Sistem (Tema)</label>
+                            <select name="theme_mode" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <option value="light" {{ $profile->theme_mode === 'light' ? 'selected' : '' }}>Mode Terang (Light Mode)</option>
+                                <option value="dark" {{ $profile->theme_mode === 'dark' ? 'selected' : '' }}>Mode Gelap (Dark Mode)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Visual Assets Section -->

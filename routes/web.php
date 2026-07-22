@@ -6,11 +6,10 @@ use App\Http\Controllers\WaliKelasController;
 use App\Http\Controllers\BkCaseController;
 use App\Http\Controllers\BkSessionController;
 use App\Http\Controllers\AttendanceDailyController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [WelcomeController::class, 'index']);
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -38,6 +37,36 @@ Route::middleware('auth')->group(function () {
     // MTs Database Integration Routes
     Route::get('/admin/integrasi-mts', [\App\Http\Controllers\MtsIntegrationController::class, 'index'])->name('admin.integrasi.index');
     Route::post('/admin/integrasi-mts/sync', [\App\Http\Controllers\MtsIntegrationController::class, 'sync'])->name('admin.integrasi.sync');
+
+    // Publication Routes
+    Route::get('/admin/publikasi/berita', [\App\Http\Controllers\PublicationController::class, 'beritaIndex'])->name('admin.publikasi.berita.index');
+    Route::post('/admin/publikasi/berita', [\App\Http\Controllers\PublicationController::class, 'storeBerita'])->name('admin.publikasi.berita.store');
+    Route::patch('/admin/publikasi/berita/{id}', [\App\Http\Controllers\PublicationController::class, 'updateBerita'])->name('admin.publikasi.berita.update');
+    Route::delete('/admin/publikasi/berita/{id}', [\App\Http\Controllers\PublicationController::class, 'deleteBerita'])->name('admin.publikasi.berita.delete');
+
+    Route::get('/admin/publikasi/galeri', [\App\Http\Controllers\PublicationController::class, 'galeriIndex'])->name('admin.publikasi.galeri.index');
+    Route::post('/admin/publikasi/galeri', [\App\Http\Controllers\PublicationController::class, 'storeGaleri'])->name('admin.publikasi.galeri.store');
+    Route::patch('/admin/publikasi/galeri/{id}', [\App\Http\Controllers\PublicationController::class, 'updateGaleri'])->name('admin.publikasi.galeri.update');
+    Route::delete('/admin/publikasi/galeri/{id}', [\App\Http\Controllers\PublicationController::class, 'deleteGaleri'])->name('admin.publikasi.galeri.delete');
+
+    Route::get('/admin/publikasi/medsos', [\App\Http\Controllers\PublicationController::class, 'medsosIndex'])->name('admin.publikasi.medsos.index');
+    Route::post('/admin/publikasi/medsos', [\App\Http\Controllers\PublicationController::class, 'updateMedsos'])->name('admin.publikasi.medsos.update');
+
+    Route::get('/admin/publikasi/banner', [\App\Http\Controllers\PublicationController::class, 'bannerIndex'])->name('admin.publikasi.banner.index');
+    Route::post('/admin/publikasi/banner', [\App\Http\Controllers\PublicationController::class, 'storeBanner'])->name('admin.publikasi.banner.store');
+    Route::patch('/admin/publikasi/banner/{id}', [\App\Http\Controllers\PublicationController::class, 'updateBanner'])->name('admin.publikasi.banner.update');
+    Route::delete('/admin/publikasi/banner/{id}', [\App\Http\Controllers\PublicationController::class, 'deleteBanner'])->name('admin.publikasi.banner.delete');
+
+    // System Administration Routes
+    Route::get('/admin/sistem/logs', [\App\Http\Controllers\SystemController::class, 'logsIndex'])->name('admin.sistem.logs');
+    Route::get('/admin/sistem/audit', [\App\Http\Controllers\SystemController::class, 'auditIndex'])->name('admin.sistem.audit');
+    Route::post('/admin/sistem/audit/clear', [\App\Http\Controllers\SystemController::class, 'clearAuditLogs'])->name('admin.sistem.audit.clear');
+    Route::get('/admin/sistem/audit/export/{format}', [\App\Http\Controllers\SystemController::class, 'exportAuditLogs'])->name('admin.sistem.audit.export');
+    Route::get('/admin/sistem/backup', [\App\Http\Controllers\SystemController::class, 'backupIndex'])->name('admin.sistem.backup');
+    Route::post('/admin/sistem/backup/create', [\App\Http\Controllers\SystemController::class, 'createBackup'])->name('admin.sistem.backup.create');
+    Route::get('/admin/sistem/backup/download/{filename}', [\App\Http\Controllers\SystemController::class, 'downloadBackup'])->name('admin.sistem.backup.download');
+    Route::post('/admin/sistem/backup/restore', [\App\Http\Controllers\SystemController::class, 'restoreBackup'])->name('admin.sistem.backup.restore');
+    Route::delete('/admin/sistem/backup/{filename}', [\App\Http\Controllers\SystemController::class, 'deleteBackup'])->name('admin.sistem.backup.delete');
 
     Route::get('/admin/kelas', [DashboardController::class, 'kelasIndex'])->name('admin.kelas.index');
     Route::post('/admin/kelas', [DashboardController::class, 'storeKelas'])->name('admin.kelas.store');
@@ -93,12 +122,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/wali/presensi', [DashboardController::class, 'storePresensi'])->name('wali.presensi.store');
     Route::patch('/wali/presensi/{id}', [DashboardController::class, 'updatePresensi'])->name('wali.presensi.update');
     Route::delete('/wali/presensi/{id}', [DashboardController::class, 'deletePresensi'])->name('wali.presensi.delete');
+    // Officer (Petugas Absensi) Management by Wali Kelas
+    Route::get('/wali/petugas-absensi', [WaliKelasController::class, 'officerIndex'])->name('wali.officer.index');
+    Route::post('/wali/petugas-absensi/assign', [WaliKelasController::class, 'assignOfficer'])->name('wali.officer.assign');
+    Route::delete('/wali/petugas-absensi/{id}/revoke', [WaliKelasController::class, 'revokeOfficer'])->name('wali.officer.revoke');
 
-    // Siswa Routes
-    Route::get('/siswa/elearning', [DashboardController::class, 'siswaElearning'])->name('siswa.elearning.index');
-    Route::get('/siswa/cbt', [DashboardController::class, 'siswaCbt'])->name('siswa.cbt.index');
-    Route::get('/siswa/jadwal', [DashboardController::class, 'siswaJadwal'])->name('siswa.jadwal.index');
-    Route::get('/siswa/presensi', [DashboardController::class, 'siswaPresensi'])->name('siswa.presensi.index');
+    // Admin Absensi Management Routes
+    Route::get('/admin/absensi', [DashboardController::class, 'adminAbsensiIndex'])->name('admin.absensi.index');
+    Route::post('/admin/absensi/assign', [DashboardController::class, 'adminAbsensiAssign'])->name('admin.absensi.assign');
+    Route::delete('/admin/absensi/{id}/revoke', [DashboardController::class, 'adminAbsensiRevoke'])->name('admin.absensi.revoke');
+    Route::post('/admin/absensi/{id}/toggle', [DashboardController::class, 'adminAbsensiToggle'])->name('admin.absensi.toggle');
 
     // BK Routes (Enhanced Case Management & Sessions)
     Route::get('/bk/triase', [BkCaseController::class, 'triaseIndex'])->name('bk.triase.index');

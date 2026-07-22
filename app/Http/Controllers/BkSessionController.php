@@ -15,22 +15,18 @@ use Carbon\Carbon;
 
 class BkSessionController extends Controller
 {
-    public function __construct()
+    private function checkGuruBk()
     {
-        // Enforce role-based access checks
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user || !$user->isGuruBk()) {
-                AuditLog::create([
-                    'user_id' => $user ? $user->id : null,
-                    'action' => 'unauthorized_session_attempt',
-                    'entity' => 'bk_sessions',
-                    'entity_id' => null,
-                ]);
-                abort(403, 'Akses Ditolak. Sesi konseling hanya dapat diakses oleh Guru BK.');
-            }
-            return $next($request);
-        });
+        $user = Auth::user();
+        if (!$user || !$user->isGuruBk()) {
+            AuditLog::create([
+                'user_id' => $user ? $user->id : null,
+                'action' => 'unauthorized_session_attempt',
+                'entity' => 'bk_sessions',
+                'entity_id' => null,
+            ]);
+            abort(403, 'Akses Ditolak. Sesi konseling hanya dapat diakses oleh Guru BK.');
+        }
     }
 
     /**
@@ -38,6 +34,7 @@ class BkSessionController extends Controller
      */
     public function store(Request $request, $caseId)
     {
+        $this->checkGuruBk();
         $request->validate([
             'service_type' => 'required|string|max:255',
             'date' => 'required|date',
@@ -110,6 +107,7 @@ class BkSessionController extends Controller
      */
     public function show($id)
     {
+        $this->checkGuruBk();
         $session = BkSession::with('case.referral.student')->findOrFail($id);
         $user = Auth::user();
 

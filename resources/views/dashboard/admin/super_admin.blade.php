@@ -1,37 +1,37 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center bg-slate-900 px-6 py-4 rounded-xl shadow-lg border border-slate-800">
-            <h2 class="font-bold text-xl text-white tracking-wide flex items-center gap-2">
+        <div class="flex justify-between items-center bg-white dark:bg-slate-900 px-6 py-4 rounded-xl shadow-sm dark:shadow-lg border border-slate-200 dark:border-slate-800 transition-colors duration-300">
+            <h2 class="font-bold text-xl text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                 <span class="w-3.5 h-3.5 rounded bg-emerald-500"></span>
                 {{ __('Super Admin Dashboard') }}
             </h2>
-            <div class="text-xs font-semibold text-slate-400">
-                TA 2026/2027 • <span class="text-emerald-400 font-bold">Aktif</span>
+            <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                TA 2026/2027 • <span class="text-emerald-600 dark:text-emerald-400 font-bold">Aktif</span>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-6 bg-slate-950 min-h-screen">
+    <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Toast Notifications -->
             @if(session('success'))
-                <div class="p-4 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-xl flex items-center gap-3 shadow-md animate-fade-in">
-                    <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl flex items-center gap-3 shadow-sm dark:shadow-md animate-fade-in">
+                    <svg class="w-5 h-5 text-emerald-500 dark:text-emerald-450 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span class="text-sm font-semibold">{{ session('success') }}</span>
                 </div>
             @endif
 
             <!-- Welcome Panel -->
-            <div class="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-6 shadow-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-sm dark:shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transition-colors duration-300">
                 <div>
-                    <h3 class="text-2xl font-extrabold tracking-tight mt-1">Selamat datang, Super Admin</h3>
-                    <p class="text-slate-400 text-xs mt-1">
+                    <h3 class="text-2xl font-extrabold tracking-tight mt-1 text-slate-900 dark:text-white">Selamat datang, Super Admin</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">
                         Ringkasan operasional madrasah hari ini
                     </p>
                 </div>
-                <div class="bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-800 shrink-0 text-center flex items-center gap-4">
-                    <span class="block text-slate-400 text-xs font-semibold uppercase tracking-wider">SERVER</span>
-                    <span class="text-emerald-400 font-bold text-sm flex items-center gap-1.5 justify-center">
+                <div class="bg-slate-100/80 dark:bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shrink-0 text-center flex items-center gap-4 transition-colors duration-300">
+                    <span class="block text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">SERVER</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1.5 justify-center">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         ONLINE
                     </span>
