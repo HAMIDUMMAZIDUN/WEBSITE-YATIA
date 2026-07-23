@@ -78,6 +78,7 @@
                                         <th class="px-6 py-3">Email</th>
                                         <th class="px-6 py-3">Kata Sandi</th>
                                         <th class="px-6 py-3">Hak Akses</th>
+                                        <th class="px-6 py-3 text-center">Status</th>
                                         <th class="px-6 py-3 text-center">Aksi</th>
                                     </tr>
                                 </thead>
@@ -93,15 +94,28 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">
+                                                @php
+                                                    $usrGender = 'L';
+                                                    if ($usr->guru) {
+                                                        $usrGender = $usr->guru->jenis_kelamin ?? 'L';
+                                                    } elseif ($usr->siswa) {
+                                                        $usrGender = $usr->siswa->jenis_kelamin ?? 'L';
+                                                    }
+                                                @endphp
                                                 <div class="flex items-center gap-3">
                                                     @if($usr->photo_profile)
                                                         <img src="{{ asset('storage/' . $usr->photo_profile) }}" class="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-800">
                                                     @else
-                                                        <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-xs">
+                                                        <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-350 flex items-center justify-center font-bold text-xs">
                                                             {{ substr($usr->name, 0, 1) }}
                                                         </div>
                                                     @endif
-                                                    <span>{{ $usr->name }}</span>
+                                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                                        <span>{{ $usr->name }}</span>
+                                                        <span class="px-1 py-0.5 rounded text-[8px] font-bold {{ $usrGender === 'L' ? 'bg-blue-50 text-blue-750 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-900' : 'bg-rose-50 text-rose-750 dark:bg-rose-950/40 dark:text-rose-450 border border-rose-200 dark:border-rose-900' }}">
+                                                            {{ $usrGender }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-mono text-xs text-slate-700 dark:text-slate-300">{{ $usr->username ?? $usr->nik }}</td>
@@ -128,15 +142,18 @@
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <div class="flex items-center justify-center gap-3">
-                                                    @php
-                                                        $usrGender = 'L';
-                                                        if ($usr->guru) {
-                                                            $usrGender = $usr->guru->jenis_kelamin ?? 'L';
-                                                        } elseif ($usr->siswa) {
-                                                            $usrGender = $usr->siswa->jenis_kelamin ?? 'L';
-                                                        }
-                                                    @endphp
+                                                @if($usr->is_active)
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Aktif
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Nonaktif
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="flex items-center justify-center gap-2 flex-wrap">
                                                     <button 
                                                         @click="
                                                             editUser = { 
@@ -154,13 +171,20 @@
                                                         Edit
                                                     </button>
                                                     @if($usr->id !== Auth::id())
-                                                        <form action="{{ route('admin.users.delete', $usr->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?')">
+                                                        {{-- Toggle Aktif/Nonaktif --}}
+                                                        <form action="{{ route('admin.users.toggle_status', $usr->id) }}" method="POST" onsubmit="return confirm('{{ $usr->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun {{ addslashes($usr->name) }}?')">
+                                                            @csrf
+                                                            <button type="submit" class="font-semibold text-xs transition-colors {{ $usr->is_active ? 'text-amber-600 dark:text-amber-400 hover:underline' : 'text-emerald-600 dark:text-emerald-400 hover:underline' }}">
+                                                                {{ $usr->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                            </button>
+                                                        </form>
+                                                        <form action="{{ route('admin.users.delete', $usr->id) }}" method="POST" onsubmit="return confirm('Hapus user {{ addslashes($usr->name) }}? Tindakan ini tidak dapat dibatalkan.')">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="text-rose-600 dark:text-rose-400 hover:underline font-semibold text-xs transition-colors">Hapus</button>
                                                         </form>
                                                     @else
-                                                        <span class="text-slate-400 dark:text-slate-650 text-xs">-</span>
+                                                        <span class="text-slate-400 dark:text-slate-650 text-xs italic">Anda</span>
                                                     @endif
                                                 </div>
                                             </td>

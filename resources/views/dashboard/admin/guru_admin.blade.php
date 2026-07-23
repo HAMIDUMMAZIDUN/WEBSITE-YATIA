@@ -16,7 +16,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="{ 
             editModalOpen: false, 
-            editGuru: { id: '', name: '', email: '', role_id: '', jenis_kelamin: 'L', nik_nuptk: '', tempat_lahir: '', tanggal_lahir: '', pendidikan: '', jtm: 0 },
+            editGuru: { id: '', name: '', email: '', role_id: '', jenis_kelamin: 'L', nip: '', nik_nuptk: '', tempat_lahir: '', tanggal_lahir: '', pendidikan: '', jtm: 0 },
             searchQuery: '',
             genderFilter: '',
             selectAll: false,
@@ -118,8 +118,13 @@
                                             </td>
                                             <td class="px-4 py-3.5 font-mono text-slate-700">{{ $gr->nik_nuptk ?? '-' }}</td>
                                             <td class="px-4 py-3.5">
-                                                <div class="font-bold text-slate-900">{{ $gr->nama }}</div>
-                                                <div class="text-[10px] text-slate-400 font-mono">{{ $gr->nip }}</div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <div class="font-bold text-slate-900">{{ $gr->nama }}</div>
+                                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-bold {{ $gr->is_aktif ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
+                                                        {{ $gr->is_aktif ? 'Aktif' : 'Non-Aktif' }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ $gr->nip }}</div>
                                             </td>
                                             <td class="px-2 py-3.5 text-center">
                                                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $gr->jenis_kelamin === 'L' ? 'bg-blue-50 text-blue-750 border border-blue-200' : 'bg-rose-50 text-rose-750 border border-rose-200' }}">
@@ -155,6 +160,7 @@
                                                             email: '{{ $gr->user->email ?? '' }}',
                                                             role_id: '{{ $gr->user->role_id ?? '' }}',
                                                             jenis_kelamin: '{{ $gr->jenis_kelamin }}',
+                                                            nip: '{{ $gr->nip }}',
                                                             nik_nuptk: '{{ $gr->nik_nuptk }}',
                                                             tempat_lahir: '{{ addslashes($gr->tempat_lahir) }}',
                                                             tanggal_lahir: '{{ $gr->tanggal_lahir }}',
@@ -223,9 +229,15 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIK / NUPTK</label>
-                                <input type="text" name="nik_nuptk" placeholder="16 Digit NIK" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIP (Opsional)</label>
+                                    <input type="text" name="nip" placeholder="NIP Guru..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIK / NUPTK</label>
+                                    <input type="text" name="nik_nuptk" placeholder="16 Digit NIK" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                                </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="space-y-1">
@@ -260,10 +272,28 @@
                                 Simpan Data Guru
                             </button>
                         </form>
+                        <!-- Import/Export section -->
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                            <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Atau Import / Export Masal</span>
+                            <div class="flex gap-2">
+                                <a href="{{ route('data.template', 'guru') }}" class="flex-1 text-center py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-150 dark:border-slate-700 transition-colors">
+                                    Template
+                                </a>
+                                <a href="{{ route('data.export', 'guru') }}" class="flex-1 text-center py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-450 text-xs font-semibold rounded-xl border border-emerald-150 dark:border-emerald-900 transition-colors">
+                                    Ekspor CSV
+                                </a>
+                            </div>
+                             <form action="{{ route('data.import', 'guru') }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                                 @csrf
+                                 <input type="file" name="file" required class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-350 hover:file:bg-slate-200">
+                                 <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-xl transition-colors">
+                                     Impor CSV
+                                 </button>
+                             </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Edit Guru Modal -->
         <div x-show="editModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -307,9 +337,15 @@
                             </select>
                         </div>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIK / NUPTK</label>
-                        <input type="text" name="nik_nuptk" x-model="editGuru.nik_nuptk" placeholder="16 Digit NIK" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIP</label>
+                            <input type="text" name="nip" x-model="editGuru.nip" placeholder="NIP Guru..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">NIK / NUPTK</label>
+                            <input type="text" name="nik_nuptk" x-model="editGuru.nik_nuptk" placeholder="16 Digit NIK" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="space-y-1">
@@ -351,6 +387,7 @@
                     </div>
                 </form>
             </div>
+        </div>
         </div>
     </div>
 </x-app-layout>

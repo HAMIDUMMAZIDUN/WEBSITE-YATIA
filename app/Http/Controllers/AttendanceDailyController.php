@@ -58,21 +58,38 @@ class AttendanceDailyController extends Controller
         $activeYear = AcademicYear::where('active', true)->first();
         $yearId = $activeYear ? $activeYear->id : null;
 
-        // If no class is specified, find the first class assigned to this officer
+        // If no class is specified, find the first class assigned to this officer or homeroom
         if (!$classId) {
-            $assignment = AttendanceOfficerAssignment::where('user_id', $user->id)
-                ->where('active', true)
-                ->when($yearId, function($q) use ($yearId) {
-                    return $q->where('academic_year_id', $yearId);
-                })
-                ->first();
-
-            if (!$assignment) {
-                return view('dashboard.absensi_empty', [
-                    'message' => 'Anda tidak ditugaskan untuk menginput absensi di kelas manapun.'
-                ]);
+            if ($user->isWaliKelas()) {
+                $guru = $user->guru;
+                if ($guru) {
+                    $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $guru->id)
+                        ->where('active', true)
+                        ->when($yearId, function($q) use ($yearId) {
+                            return $q->where('academic_year_id', $yearId);
+                        })
+                        ->first();
+                    if ($homeroom) {
+                        $classId = $homeroom->class_id;
+                    }
+                }
             }
-            $classId = $assignment->class_id;
+
+            if (!$classId) {
+                $assignment = AttendanceOfficerAssignment::where('user_id', $user->id)
+                    ->where('active', true)
+                    ->when($yearId, function($q) use ($yearId) {
+                        return $q->where('academic_year_id', $yearId);
+                    })
+                    ->first();
+
+                if (!$assignment) {
+                    return view('dashboard.absensi_empty', [
+                        'message' => 'Anda tidak ditugaskan untuk menginput absensi di kelas manapun.'
+                    ]);
+                }
+                $classId = $assignment->class_id;
+            }
         }
 
         $this->checkAssignment($classId);

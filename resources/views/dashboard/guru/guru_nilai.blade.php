@@ -136,6 +136,25 @@
                                 Simpan Nilai
                             </button>
                         </form>
+                        <!-- Import/Export section -->
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                            <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Atau Import / Export Masal</span>
+                            <div class="flex gap-2">
+                                <a href="{{ route('data.template', 'nilai') }}" class="flex-1 text-center py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-150 dark:border-slate-700 transition-colors">
+                                    Template
+                                </a>
+                                <a href="{{ route('data.export', 'nilai') }}" class="flex-1 text-center py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-450 text-xs font-semibold rounded-xl border border-emerald-150 dark:border-emerald-900 transition-colors">
+                                    Ekspor CSV
+                                </a>
+                            </div>
+                             <form action="{{ route('data.import', 'nilai') }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                                 @csrf
+                                 <input type="file" name="file" required class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-350 hover:file:bg-slate-200">
+                                 <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-xl transition-colors">
+                                     Impor CSV
+                                 </button>
+                             </form>
+                        </div>
                     </div>
                 </div>
             </div>

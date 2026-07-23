@@ -1,4 +1,4 @@
-{{-- Sidebar partial — sidebarOpen & activeHash from body x-data --}}
+{{-- Sidebar partial — sidebarOpen from body x-data --}}
 <div class="flex flex-col h-full bg-white dark:bg-slate-900">
 
     {{-- Branding --}}
@@ -50,11 +50,8 @@
             :class="[
                '{{ $linkBase }}',
                sidebarOpen ? '{{ $linkPad }}' : '{{ $linkIcon }}',
-               (activeHash === '#dashboard' || activeHash === '')
-                   ? 'active-stabilo'
-                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-            ]"
-            @click="activeHash = '#dashboard'">
+               '{{ request()->routeIs('dashboard') ? 'active-stabilo' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white' }}'
+            ]">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
@@ -234,7 +231,8 @@
                 </button>
                 <div x-show="open" class="pl-7 pr-1 space-y-1">
                     <a href="{{ route('wali.dashboard') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('wali.dashboard') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Dashboard Kelas</a>
-                    <a href="{{ route('wali.siswa.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('wali.siswa.index') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Siswa Aktif</a>
+                    <a href="{{ route('wali.siswa.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('wali.siswa.index') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Siswa Binaan</a>
+                    <a href="{{ route('absensi.officer.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('absensi.officer.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Input Absensi Harian</a>
                     <a href="{{ route('wali.absensi.verifikasi.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('wali.absensi.verifikasi.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Verifikasi Absensi</a>
                     <a href="{{ route('wali.officer.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('wali.officer.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">
                         <span class="flex items-center gap-1.5">Petugas Absensi <span class="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded text-[9px] font-bold">Atur</span></span>
@@ -375,8 +373,7 @@
 
         {{-- Settings (Always visible at bottom) --}}
         <a href="{{ route('profile.edit') }}"
-            :class="['{{ $linkBase }}', sidebarOpen ? '{{ $linkPad }}' : '{{ $linkIcon }}', activeHash === '#profile' ? 'active-stabilo' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900']"
-            @click="activeHash = '#profile'">
+            :class="['{{ $linkBase }}', sidebarOpen ? '{{ $linkPad }}' : '{{ $linkIcon }}', '{{ request()->routeIs('profile.edit') ? 'active-stabilo' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900' }}']">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>

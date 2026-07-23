@@ -62,6 +62,33 @@
                 </form>
             </div>
 
+            <!-- Import/Export Panel -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <div class="border-b border-slate-100 pb-3 mb-4">
+                    <h3 class="font-bold text-slate-800 text-sm">Import / Export Data Siswa Masal</h3>
+                    <p class="text-[11px] text-slate-400">Unduh template, lengkapi data siswa, lalu unggah untuk impor masal.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                    <div class="flex gap-2">
+                        <a href="{{ route('data.template', 'siswa') }}" class="flex-1 text-center py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-655 text-xs font-bold rounded-xl border border-slate-200 transition-colors">
+                            Unduh Template Impor
+                        </a>
+                        <a href="{{ route('data.export', 'siswa') }}" class="flex-1 text-center py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 transition-colors">
+                            Ekspor Seluruh Siswa (.csv)
+                        </a>
+                    </div>
+                    <form action="{{ route('data.import', 'siswa') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
+                        @csrf
+                        <div class="flex-1">
+                            <input type="file" name="file" required class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-colors">
+                        </div>
+                        <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-md transition-colors">
+                            Unggah & Impor
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <!-- Students List -->
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
@@ -86,8 +113,18 @@
                                         <input type="checkbox" class="item-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('admin.siswa.delete', $siswa->id) }}">
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="font-bold text-slate-900">{{ $siswa->nama }}</div>
-                                        <div class="text-[11px] text-slate-400">NIS: {{ $siswa->nis }} | NISN: {{ $siswa->nisn ?? '-' }}</div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <div class="font-bold text-slate-900">{{ $siswa->nama }}</div>
+                                            <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold
+                                                {{ $siswa->status === 'Aktif' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : '' }}
+                                                {{ $siswa->status === 'Mutasi' ? 'bg-amber-50 text-amber-700 border border-amber-250' : '' }}
+                                                {{ $siswa->status === 'Keluar' ? 'bg-rose-50 text-rose-700 border border-rose-250' : '' }}
+                                                {{ $siswa->status === 'Lulus' ? 'bg-blue-50 text-blue-700 border border-blue-250' : '' }}
+                                                {{ $siswa->status === 'Drop Out' ? 'bg-slate-100 text-slate-700 border border-slate-200' : '' }}">
+                                                {{ $siswa->status }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">NIS: {{ $siswa->nis }} | NISN: {{ $siswa->nisn ?? '-' }}</div>
                                     </td>
                                     <td class="px-6 py-4 text-slate-800 font-medium">
                                         {{ $siswa->kelas->nama_kelas ?? 'Belum Ditentukan' }}

@@ -236,27 +236,142 @@
         html.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.15) !important; color: #818cf8 !important; }
         html.dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.15) !important; color: #f472b6 !important; }
         html.dark .bg-teal-100 { background-color: rgba(20, 184, 166, 0.15) !important; color: #2dd4bf !important; }
+
+        /* ─── GLOBAL RESPONSIVE FIXES ─────────────────────────────────────── */
+
+        /* Prevent horizontal page overflow on all screen sizes */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        /* All images responsive by default */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Ensure main content area never overflows the viewport */
+        main {
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* Tables always scrollable horizontally on small screens */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Modals should be contained within the viewport on all screen sizes */
+        .modal-container {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Ensure modals don't overflow small screens */
+        .fixed.inset-0 > div[class*="max-w"],
+        .fixed.inset-0 > div.bg-white {
+            max-width: calc(100vw - 2rem);
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+
+        /* Grid forms in sidebar — make 2-col grids collapse to 1 on narrow spaces */
+        @media (max-width: 400px) {
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Top navbar title truncation on very small screens */
+        @media (max-width: 480px) {
+            .font-display.text-base {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Sidebar icon-only mode: prevent content overflow */
+        aside[style*="width: 5rem"] * {
+            overflow: hidden;
+        }
+
+        /* Ensure input fields never overflow their containers */
+        input, select, textarea {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Stat cards — prevent text overflow */
+        .text-4xl, .text-3xl {
+            word-break: break-all;
+        }
+
+        /* Page header wrap on small screens */
+        header .max-w-7xl {
+            overflow: hidden;
+        }
+
+        /* Better touch targets on mobile */
+        @media (max-width: 768px) {
+            button, a.btn, [role="button"] {
+                min-height: 36px;
+            }
+
+            /* Stack header elements on small screens */
+            header .flex.flex-col.md\\:flex-row {
+                gap: 0.5rem;
+            }
+        }
+
+        /* Thin horizontal scrollbar for tables */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 4px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+        .dark .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
     </style>
 </head>
 
 <body x-data="{ 
         sidebarOpen: window.innerWidth >= 768 ? (localStorage.getItem('sidebarOpen') !== 'false') : false,
-        activeHash: (function(){ var p='{{ request()->path() }}'; if(p.includes('profile')) return '#profile'; if(p.includes('admin/users')) return '#users-section'; if(p.includes('admin/kelas')) return '#kelas'; if(p.includes('admin/mapel')) return '#mapel'; if(p.includes('wali/siswa')) return '#wali-siswa'; if(p.includes('wali/absensi')) return '#wali-absensi'; if(p.includes('guru/jadwal')) return '#jadwal-mengajar'; if(p.includes('guru/elearning')) return '#elearning-section'; if(p.includes('guru/nilai')) return '#nilai-section'; if(p.includes('bk/pelanggaran')) return '#kasus-section'; if(p.includes('siswa/elearning')) return '#siswa-elearning'; if(p.includes('siswa/cbt')) return '#siswa-cbt'; if(p.includes('siswa/jadwal')) return '#siswa-jadwal'; if(p.includes('siswa/presensi')) return '#siswa-presensi'; return '#dashboard'; })(),
         toggleSidebar() {
             this.sidebarOpen = !this.sidebarOpen;
             if (window.innerWidth >= 768) {
                 localStorage.setItem('sidebarOpen', this.sidebarOpen);
             }
         }
-    }" @hashchange.window="activeHash = window.location.hash || '#dashboard'"
+    }"
     class="font-sans antialiased text-black dark:text-white bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     {{-- Outer flex container: sidebar + content sit side by side --}}
     <div class="flex min-h-screen bg-slate-50/50 dark:bg-slate-950">
 
         {{-- ─── DESKTOP SIDEBAR: sticky so it stays visible on scroll ───── --}}
         {{-- flex-row sibling so it NEVER overlaps the main content area       --}}
-        <aside @click.stop class="hidden md:flex flex-col shrink-0 sticky top-0 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-30 transition-all duration-300 ease-in-out overflow-hidden"
+        <aside id="main-sidebar" @click.stop class="hidden md:flex flex-col shrink-0 sticky top-0 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-30 transition-all duration-300 ease-in-out overflow-hidden"
             :style="sidebarOpen ? 'width: 16rem; min-width: 16rem;' : 'width: 5rem; min-width: 5rem;'">
+            <script>
+                (function() {
+                    var sidebarOpen = window.innerWidth >= 768 ? (localStorage.getItem('sidebarOpen') !== 'false') : false;
+                    var sidebar = document.getElementById('main-sidebar');
+                    if (sidebar) {
+                        sidebar.style.width = sidebarOpen ? '16rem' : '5rem';
+                        sidebar.style.minWidth = sidebarOpen ? '16rem' : '5rem';
+                        // Disable transition initially to prevent load slide-in glitch
+                        sidebar.style.transition = 'none';
+                        setTimeout(function() {
+                            sidebar.style.transition = '';
+                        }, 50);
+                    }
+                })();
+            </script>
             {{-- Inner wrapper dynamically sizes to parent width --}}
             <div class="w-full flex flex-col h-full overflow-y-auto sidebar-scroll">
                 @include('layouts.navigation.desktop')

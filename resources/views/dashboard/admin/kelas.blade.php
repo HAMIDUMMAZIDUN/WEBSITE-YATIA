@@ -58,7 +58,14 @@
                                             <td class="px-6 py-4">
                                                 <input type="checkbox" class="item-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('admin.kelas.delete', $kls->id) }}">
                                             </td>
-                                            <td class="px-6 py-4 font-semibold text-slate-900">{{ $kls->nama_kelas }}</td>
+                                            <td class="px-6 py-4 font-semibold text-slate-900">
+                                                <div class="flex items-center gap-2">
+                                                    <span>{{ $kls->nama_kelas }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-105 text-slate-600 border border-slate-200">
+                                                        {{ $kls->unit }}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td class="px-6 py-4">{{ $kls->waliGuru ? $kls->waliGuru->nama : 'Belum ditentukan' }}</td>
                                             <td class="px-6 py-4 text-center">
                                                 <div class="flex items-center justify-center gap-3">
@@ -144,11 +151,11 @@
                                     Ekspor CSV
                                 </a>
                             </div>
-                            <form action="{{ route('data.import', 'kelas') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                            <form action="{{ route('data.import', 'kelas') }}" method="POST" enctype="multipart/form-data" class="space-y-2">
                                 @csrf
                                 <input type="file" name="file" required class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
-                                <button type="submit" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-colors flex-shrink-0">
-                                    Unggah
+                                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-xl transition-colors">
+                                    Impor CSV
                                 </button>
                             </form>
                         </div>

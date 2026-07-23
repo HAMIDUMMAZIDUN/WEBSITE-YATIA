@@ -28,12 +28,12 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
         if ($user->isSuperAdmin()) {
-            return $this->superAdminDashboard();
+            return $this->superAdminDashboard($request);
         } elseif ($user->isWaliKelas()) {
             return $this->waliKelasDashboard();
         } elseif ($user->isGuru()) {
@@ -47,39 +47,97 @@ class DashboardController extends Controller
         abort(403, 'Peran tidak dikenali.');
     }
 
-    private function superAdminDashboard()
+    private function superAdminDashboard(Request $request)
     {
-        $today = Carbon::today()->toDateString();
+        $selectedUnit = $request->input('unit', 'MA');
+        $date = $request->input('date', Carbon::today()->toDateString());
         
-        // Calculate attendance stats for today
+        $classes = Kelas::where('unit', $selectedUnit)->orderBy('nama_kelas', 'asc')->get();
+        $allClassIds = $classes->pluck('id')->toArray();
+        
+        $selectedClassIds = $request->input('kelas_ids');
+        if (empty($selectedClassIds)) {
+            $selectedClassIds = $allClassIds;
+        } else {
+            $selectedClassIds = array_map('intval', (array) $selectedClassIds);
+            $selectedClassIds = array_intersect($selectedClassIds, $allClassIds);
+        }
+
+        // Calculate attendance stats for filtered classes and date
+        $totalSiswaCount = Siswa::whereIn('kelas_id', $selectedClassIds)->count();
+        
+        $attendanceRecords = AttendanceDaily::whereIn('class_id', $selectedClassIds)
+            ->where('date', $date)
+            ->get();
+
+        $totalHadir = $attendanceRecords->whereIn('status', ['H', 'T', 'D'])->count();
+        $totalSakit = $attendanceRecords->where('status', 'S')->count();
+        $totalIzin = $attendanceRecords->where('status', 'I')->count();
+        $totalAlpa = max(0, $totalSiswaCount - $totalHadir - $totalSakit - $totalIzin);
+        
+        $totalKehadiranPct = $totalSiswaCount > 0 ? ($totalHadir / $totalSiswaCount) * 100 : 0;
+
         $attendanceStats = [
-            'hadir' => AttendanceDaily::where('date', $today)->where('status', 'H')->count(),
-            'sakit' => AttendanceDaily::where('date', $today)->where('status', 'S')->count(),
-            'izin' => AttendanceDaily::where('date', $today)->where('status', 'I')->count(),
-            'alpa' => AttendanceDaily::where('date', $today)->where('status', 'A')->count(),
-            'terlambat' => AttendanceDaily::where('date', $today)->where('status', 'T')->count(),
+            'total_siswa' => $totalSiswaCount,
+            'hadir' => $totalHadir,
+            'sakit' => $totalSakit,
+            'izin' => $totalIzin,
+            'alpa' => $totalAlpa,
+            'kehadiran_pct' => $totalKehadiranPct,
         ];
 
-        // Class attendance completeness
-        $classes = Kelas::all();
-        $classStatusList = [];
+        // Compile class status list & table data
+        $tableData = [];
         $classesFilledCount = 0;
 
         foreach ($classes as $cls) {
-            $totalStudents = Siswa::where('kelas_id', $cls->id)->count();
-            $filledStudents = AttendanceDaily::where('date', $today)->where('class_id', $cls->id)->count();
+            $cTotal = Siswa::where('kelas_id', $cls->id)->count();
+            $cRecords = $attendanceRecords->where('class_id', $cls->id);
             
-            $status = ($filledStudents > 0) ? 'Selesai' : 'Belum Isi';
-            if ($filledStudents > 0) {
+            $cHadir = $cRecords->whereIn('status', ['H', 'T', 'D'])->count();
+            $cSakit = $cRecords->where('status', 'S')->count();
+            $cIzin = $cRecords->where('status', 'I')->count();
+            $cAlpa = max(0, $cTotal - $cHadir - $cSakit - $cIzin);
+            $cPct = $cTotal > 0 ? ($cHadir / $cTotal) * 100 : 0;
+
+            if ($cRecords->count() > 0) {
                 $classesFilledCount++;
             }
 
-            $classStatusList[] = [
-                'kelas' => $cls,
-                'total_students' => $totalStudents,
-                'filled_students' => $filledStudents,
-                'status' => $status,
-            ];
+            if (in_array($cls->id, $selectedClassIds)) {
+                $tableData[] = [
+                    'id' => $cls->id,
+                    'nama_kelas' => $cls->nama_kelas,
+                    'total_siswa' => $cTotal,
+                    'hadir' => $cHadir,
+                    'sakit' => $cSakit,
+                    'izin' => $cIzin,
+                    'alpa' => $cAlpa,
+                    'kehadiran_pct' => $cPct,
+                ];
+            }
+        }
+
+        $totals = [
+            'total_siswa' => $totalSiswaCount,
+            'hadir' => $totalHadir,
+            'sakit' => $totalSakit,
+            'izin' => $totalIzin,
+            'alpa' => $totalAlpa,
+            'kehadiran_pct' => $totalKehadiranPct,
+        ];
+
+        // Handle Exports
+        $export = $request->input('export');
+        if ($export === 'excel') {
+            return $this->exportRekapExcel($tableData, $totals, $selectedUnit, $date);
+        } elseif ($export === 'pdf') {
+            return view('dashboard.admin.rekap_print', [
+                'tableData' => $tableData,
+                'totals' => $totals,
+                'selectedUnit' => $selectedUnit,
+                'date' => $date,
+            ]);
         }
 
         // Retrieve latest audit logs
@@ -98,7 +156,11 @@ class DashboardController extends Controller
                 'mapel_total' => MataPelajaran::count(),
             ],
             'attendance_stats' => $attendanceStats,
-            'class_status_list' => $classStatusList,
+            'tableData' => $tableData,
+            'totals' => $totals,
+            'selectedUnit' => $selectedUnit,
+            'selectedClassIds' => $selectedClassIds,
+            'date' => $date,
             'classes_filled_count' => $classesFilledCount,
             'classes_total_count' => $classes->count(),
             'latest_activities' => $latestActivities,
@@ -110,6 +172,58 @@ class DashboardController extends Controller
             'roles' => Role::all(),
         ];
         return view('dashboard.admin.super_admin', $data);
+    }
+
+    private function exportRekapExcel($tableData, $totals, $selectedUnit, $date)
+    {
+        $unitLabel = $selectedUnit === 'MA' ? 'Aliyah' : 'MTS';
+        $filename = 'rekap_kehadiran_' . strtolower($unitLabel) . '_' . str_replace('-', '', $date) . '.csv';
+        
+        $headers = [
+            "Content-type" => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+        
+        $callback = function() use ($tableData, $totals, $unitLabel, $date) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM
+            
+            fputcsv($file, ['Rekapitulasi Kehadiran Harian per Kelas']);
+            fputcsv($file, ['Unit', $unitLabel]);
+            fputcsv($file, ['Tanggal', $date]);
+            fputcsv($file, []); // Empty line
+            
+            fputcsv($file, ['Kelas', 'Total Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa', 'Kehadiran (%)']);
+            
+            foreach ($tableData as $row) {
+                fputcsv($file, [
+                    $row['nama_kelas'],
+                    $row['total_siswa'],
+                    $row['hadir'],
+                    $row['sakit'],
+                    $row['izin'],
+                    $row['alpa'],
+                    number_format($row['kehadiran_pct'], 1) . '%'
+                ]);
+            }
+            
+            fputcsv($file, [
+                'TOTAL',
+                $totals['total_siswa'],
+                $totals['hadir'],
+                $totals['sakit'],
+                $totals['izin'],
+                $totals['alpa'],
+                number_format($totals['kehadiran_pct'], 1) . '%'
+            ]);
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
 
     private function guruDashboard()
@@ -134,28 +248,7 @@ class DashboardController extends Controller
 
     private function waliKelasDashboard()
     {
-        $user = Auth::user();
-        $guru = $user->guru;
-
-        if (!$guru) {
-            abort(404, 'Detail guru tidak ditemukan.');
-        }
-
-        $kelas = Kelas::where('wali_kelas_id', $guru->id)->first();
-        if (!$kelas) {
-            $kelas = Kelas::first();
-        }
-
-        $siswas = $kelas ? Siswa::where('kelas_id', $kelas->id)->get() : collect();
-        $siswaIds = $siswas->pluck('id');
-
-        $data = [
-            'kelas' => $kelas,
-            'siswas' => $siswas,
-            'presensi' => Presensi::with('siswa')->whereIn('siswa_id', $siswaIds)->get(),
-            'nilais' => Nilai::with(['siswa', 'mataPelajaran'])->whereIn('siswa_id', $siswaIds)->get(),
-        ];
-        return view('dashboard.wali_kelas.wali_kelas', $data);
+        return redirect()->route('wali.dashboard');
     }
 
     private function siswaDashboard()
@@ -250,23 +343,25 @@ class DashboardController extends Controller
             'role_id' => $request->role_id,
         ]);
 
-        // If user is a guru, wali_kelas or guru_bk, automatically create placeholder Guru record
+        // If user is a guru, wali_kelas or guru_bk, automatically update placeholder Guru record
         $role = Role::find($request->role_id);
         if (in_array($role->name, ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])) {
-            Guru::create([
-                'user_id' => $user->id,
-                'nama' => $user->name,
-                'nip' => 'NIP-' . time(),
-                'jenis_kelamin' => $request->jenis_kelamin,
-                'password_plain' => $request->password,
-            ]);
+            Guru::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nama' => $user->name,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                    'password_plain' => $request->password,
+                ]
+            );
         } elseif ($role->name === 'siswa') {
-            Siswa::create([
-                'user_id' => $user->id,
-                'nama' => $user->name,
-                'nis' => 'NIS-' . time(),
-                'jenis_kelamin' => $request->jenis_kelamin,
-            ]);
+            Siswa::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nama' => $user->name,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                ]
+            );
         }
 
         return redirect()->back()->with('success', 'User berhasil ditambahkan.');
@@ -583,6 +678,106 @@ class DashboardController extends Controller
                 foreach ($users as $u) {
                     fputcsv($file, [$u->name, $u->email, $u->role->name]);
                 }
+            } elseif ($type === 'guru') {
+                fputcsv($file, ['Nama', 'Email', 'Hak Akses', 'Jenis Kelamin', 'NIK/NUPTK', 'Tempat Lahir', 'Tanggal Lahir', 'Pendidikan', 'JTM']);
+                $gurus = Guru::with('user.role')->get();
+                foreach ($gurus as $g) {
+                    fputcsv($file, [
+                        $g->nama,
+                        $g->user->email ?? '-',
+                        $g->user->role->name ?? '-',
+                        $g->jenis_kelamin,
+                        $g->nik_nuptk ?? '-',
+                        $g->tempat_lahir ?? '-',
+                        $g->tanggal_lahir ?? '-',
+                        $g->pendidikan ?? '-',
+                        $g->jtm ?? 0
+                    ]);
+                }
+            } elseif ($type === 'siswa') {
+                fputcsv($file, ['Nama', 'Email', 'NIS', 'NISN', 'Nama Kelas', 'Jenis Kelamin', 'No HP', 'Alamat']);
+                $user = Auth::user();
+                if ($user->isWaliKelas() && $user->guru) {
+                    $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+                    $yearId = $activeYear ? $activeYear->id : null;
+                    $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $user->guru->id)
+                        ->where('active', true)
+                        ->when($yearId, function($q) use ($yearId) {
+                            return $q->where('academic_year_id', $yearId);
+                        })
+                        ->first();
+                    $kelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', $user->guru->id)->first();
+                    if ($kelas) {
+                        $siswas = Siswa::with(['user', 'kelas'])->where('kelas_id', $kelas->id)->get();
+                    } else {
+                        $siswas = collect();
+                    }
+                } else {
+                    $siswas = Siswa::with(['user', 'kelas'])->get();
+                }
+                foreach ($siswas as $s) {
+                    fputcsv($file, [
+                        $s->nama,
+                        $s->user->email ?? '-',
+                        $s->nis ?? '-',
+                        $s->nisn ?? '-',
+                        $s->kelas->nama_kelas ?? '-',
+                        $s->jenis_kelamin,
+                        $s->no_hp ?? '-',
+                        $s->alamat ?? '-'
+                    ]);
+                }
+            } elseif ($type === 'nilai') {
+                fputcsv($file, ['NIS Siswa', 'Nama Siswa', 'Kode Mapel', 'Nama Mapel', 'Jenis Nilai', 'Nilai', 'Keterangan']);
+                $query = Nilai::with(['siswa', 'mataPelajaran']);
+                $user = Auth::user();
+                if ($user->isGuru() && $user->guru) {
+                    // Filter by class or mapel taught, but let's do simple export of all for simplicity/full access
+                }
+                $nilais = $query->get();
+                foreach ($nilais as $n) {
+                    fputcsv($file, [
+                        $n->siswa->nis ?? '-',
+                        $n->siswa->nama ?? '-',
+                        $n->mataPelajaran->kode_mapel ?? '-',
+                        $n->mataPelajaran->nama_mapel ?? '-',
+                        $n->jenis_nilai,
+                        $n->nilai,
+                        $n->keterangan ?? '-'
+                    ]);
+                }
+            } elseif ($type === 'jadwal') {
+                fputcsv($file, ['Nama Kelas', 'Kode Mapel', 'Nama Mapel', 'Hari', 'Jam Mulai', 'Jam Selesai']);
+                $query = JadwalPelajaran::with(['kelas', 'mataPelajaran']);
+                $user = Auth::user();
+                if ($user->isGuru() && $user->guru) {
+                    $query->where('guru_id', $user->guru->id);
+                }
+                $jadwals = $query->get();
+                foreach ($jadwals as $j) {
+                    fputcsv($file, [
+                        $j->kelas->nama_kelas ?? '-',
+                        $j->mataPelajaran->kode_mapel ?? '-',
+                        $j->mataPelajaran->nama_mapel ?? '-',
+                        $j->hari,
+                        $j->jam_mulai,
+                        $j->jam_selesai
+                    ]);
+                }
+            } elseif ($type === 'holidays') {
+                fputcsv($file, ['Tahun Ajaran', 'Semester', 'Tanggal Mulai', 'Tanggal Selesai', 'Keterangan', 'Unit', 'Is Nasional']);
+                $holidays = AcademicHoliday::with('academicYear')->get();
+                foreach ($holidays as $h) {
+                    fputcsv($file, [
+                        $h->academicYear->tahun_ajaran ?? '-',
+                        $h->academicYear->semester ?? '-',
+                        $h->tanggal_mulai,
+                        $h->tanggal_selesai,
+                        $h->keterangan,
+                        $h->unit,
+                        $h->is_nasional ? 'Ya' : 'Tidak'
+                    ]);
+                }
             } elseif ($type === 'kelas') {
                 fputcsv($file, ['Nama Kelas', 'Nama Wali Kelas', 'NIP Wali Kelas']);
                 $kelas = Kelas::with('waliGuru')->get();
@@ -630,6 +825,21 @@ class DashboardController extends Controller
                         $p->status
                     ]);
                 }
+            } elseif ($type === 'academic_years') {
+                fputcsv($file, ['Tahun Ajaran', 'Semester', 'Tanggal Mulai', 'Tanggal Selesai', 'Hari Sekolah', 'Unit', 'Aktif', 'Terkunci']);
+                $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->orderBy('semester', 'asc')->get();
+                foreach ($years as $y) {
+                    fputcsv($file, [
+                        $y->tahun_ajaran,
+                        $y->semester,
+                        $y->tanggal_mulai,
+                        $y->tanggal_selesai,
+                        $y->hari_sekolah,
+                        $y->unit,
+                        $y->active ? 'Ya' : 'Tidak',
+                        $y->locked ? 'Ya' : 'Tidak'
+                    ]);
+                }
             }
 
             fclose($file);
@@ -658,6 +868,21 @@ class DashboardController extends Controller
                 fputcsv($file, ['Nama', 'Email', 'Password', 'Role (super_admin/guru/wali_kelas/siswa/guru_bk/wali_kelas_guru)', 'Jenis Kelamin (L/P)']);
                 fputcsv($file, ['John Doe', 'johndoe@gmail.com', 'password123', 'siswa', 'L']);
                 fputcsv($file, ['Jane Smith, M.Pd', 'janesmith@gmail.com', 'password123', 'guru', 'P']);
+            } elseif ($type === 'guru') {
+                fputcsv($file, ['Nama', 'Email', 'Password', 'Hak Akses (guru/wali_kelas/guru_bk/wali_kelas_guru)', 'Jenis Kelamin (L/P)', 'NIK/NUPTK', 'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)', 'Pendidikan (Sarjana (S1)/Magister (S2)/Diploma (D4)/Doktor (S3))', 'JTM']);
+                fputcsv($file, ['Ahmad Ariyadi, S.Pd.I.', 'ahmad@gmail.com', 'password123', 'guru', 'L', '3204461404040002', 'Bandung', '1985-05-12', 'Sarjana (S1)', '24']);
+            } elseif ($type === 'siswa') {
+                fputcsv($file, ['Nama', 'Email', 'Password', 'NIS', 'NISN', 'Nama Kelas', 'Jenis Kelamin (L/P)', 'No HP', 'Alamat']);
+                fputcsv($file, ['Budi Utomo', 'budi@gmail.com', 'siswa123', '10024', '0081234567', 'Kelas VII-A', 'L', '081234567890', 'Jl. Merdeka No. 10']);
+            } elseif ($type === 'nilai') {
+                fputcsv($file, ['NIS Siswa', 'Kode Mapel', 'Jenis Nilai (UH/UTS/UAS/Tugas)', 'Nilai', 'Keterangan']);
+                fputcsv($file, ['10024', 'MAT-01', 'UH', '85', 'Kuis bab pecahan']);
+            } elseif ($type === 'jadwal') {
+                fputcsv($file, ['Nama Kelas', 'Kode Mapel', 'Hari (Senin/Selasa/Rabu/Kamis/Jumat/Sabtu)', 'Jam Mulai (HH:MM)', 'Jam Selesai (HH:MM)']);
+                fputcsv($file, ['Kelas VII-A', 'MAT-01', 'Senin', '07:30', '09:00']);
+            } elseif ($type === 'holidays') {
+                fputcsv($file, ['Tahun Ajaran', 'Semester (Ganjil/Genap)', 'Tanggal Mulai (YYYY-MM-DD)', 'Tanggal Selesai (YYYY-MM-DD)', 'Keterangan', 'Unit (MTs/MA/Semua)', 'Is Nasional (Ya/Tidak)']);
+                fputcsv($file, ['2026/2027', 'Ganjil', '2026-12-20', '2026-12-31', 'Libur Semester Ganjil', 'Semua', 'Ya']);
             } elseif ($type === 'kelas') {
                 fputcsv($file, ['Nama Kelas', 'NIP Wali Kelas']);
                 fputcsv($file, ['XII IPA 3', '198205122008042003']);
@@ -671,6 +896,9 @@ class DashboardController extends Controller
             } elseif ($type === 'pelanggaran') {
                 fputcsv($file, ['NIS Siswa', 'Pelanggaran', 'Poin', 'Tindakan', 'Status (diproses/diselesaikan/panggilan_orang_tua)']);
                 fputcsv($file, ['10023', 'Terlambat masuk sekolah', '5', 'Teguran lisan', 'diproses']);
+            } elseif ($type === 'academic_years') {
+                fputcsv($file, ['Tahun Ajaran', 'Semester (Ganjil/Genap)', 'Tanggal Mulai (YYYY-MM-DD)', 'Tanggal Selesai (YYYY-MM-DD)', 'Hari Sekolah (comma-separated, e.g. Monday,Tuesday,Wednesday,Thursday,Friday,Saturday)', 'Unit (MTs/MA/Semua)']);
+                fputcsv($file, ['2026/2027', 'Ganjil', '2026-07-15', '2026-12-20', 'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday', 'Semua']);
             }
 
             fclose($file);
@@ -752,22 +980,245 @@ class DashboardController extends Controller
                     ]);
 
                     if (in_array($role->name, ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])) {
-                        Guru::create([
-                            'user_id' => $user->id,
-                            'nama' => $user->name,
-                            'nip' => 'NIP-' . time() . '-' . rand(10, 99),
-                            'jenis_kelamin' => $gender,
-                        ]);
+                        Guru::updateOrCreate(
+                            ['user_id' => $user->id],
+                            [
+                                'nama' => $user->name,
+                                'jenis_kelamin' => $gender,
+                            ]
+                        );
                     } elseif ($role->name === 'siswa') {
                         $defaultKelas = Kelas::first();
-                        Siswa::create([
-                            'user_id' => $user->id,
-                            'nama' => $user->name,
-                            'nis' => 'NIS-' . time() . '-' . rand(10, 99),
-                            'kelas_id' => $defaultKelas ? $defaultKelas->id : null,
-                            'jenis_kelamin' => $gender,
-                        ]);
+                        Siswa::updateOrCreate(
+                            ['user_id' => $user->id],
+                            [
+                                'nama' => $user->name,
+                                'kelas_id' => $defaultKelas ? $defaultKelas->id : null,
+                                'jenis_kelamin' => $gender,
+                            ]
+                        );
                     }
+                    $importedCount++;
+
+                } elseif ($type === 'guru') {
+                    if (count($row) < 5) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $name = trim($row[0]);
+                    $email = trim($row[1]);
+                    $password = trim($row[2]);
+                    $roleName = trim($row[3]);
+                    $gender = strtoupper(trim($row[4]));
+                    $nik_nuptk = isset($row[5]) ? trim($row[5]) : null;
+                    $tempat_lahir = isset($row[6]) ? trim($row[6]) : null;
+                    $tanggal_lahir = isset($row[7]) ? trim($row[7]) : null;
+                    $pendidikan = isset($row[8]) ? trim($row[8]) : null;
+                    $jtm = isset($row[9]) ? intval(trim($row[9])) : 0;
+
+                    if (!in_array($gender, ['L', 'P'])) {
+                        $gender = 'L';
+                    }
+
+                    if (User::where('email', $email)->exists()) {
+                        throw new \Exception("Email '$email' sudah terdaftar (Baris $rowCount)");
+                    }
+
+                    $role = Role::where('name', $roleName)->first();
+                    if (!$role) {
+                        throw new \Exception("Role '$roleName' tidak valid (Baris $rowCount)");
+                    }
+
+                    if (!str_ends_with(strtolower($email), '@gmail.com')) {
+                        throw new \Exception("Email harus @gmail.com (Baris $rowCount)");
+                    }
+
+                    $user = User::create([
+                        'name' => $name,
+                        'email' => $email,
+                        'password' => Hash::make($password),
+                        'role_id' => $role->id,
+                    ]);
+
+                    Guru::updateOrCreate(
+                        ['user_id' => $user->id],
+                        [
+                            'nama' => $user->name,
+                            'jenis_kelamin' => $gender,
+                            'nik_nuptk' => $nik_nuptk,
+                            'tempat_lahir' => $tempat_lahir,
+                            'tanggal_lahir' => $tanggal_lahir,
+                            'pendidikan' => $pendidikan,
+                            'jtm' => $jtm,
+                        ]
+                    );
+                    $importedCount++;
+
+                } elseif ($type === 'siswa') {
+                    if (count($row) < 7) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $name = trim($row[0]);
+                    $email = trim($row[1]);
+                    $password = trim($row[2]);
+                    $nis = trim($row[3]);
+                    $nisn = trim($row[4]);
+                    $namaKelas = trim($row[5]);
+                    $gender = strtoupper(trim($row[6]));
+                    $no_hp = isset($row[7]) ? trim($row[7]) : null;
+                    $alamat = isset($row[8]) ? trim($row[8]) : null;
+
+                    if (!in_array($gender, ['L', 'P'])) {
+                        $gender = 'L';
+                    }
+
+                    if (User::where('email', $email)->exists()) {
+                        throw new \Exception("Email '$email' sudah terdaftar (Baris $rowCount)");
+                    }
+
+                    if (Siswa::where('nis', $nis)->exists()) {
+                        throw new \Exception("Siswa dengan NIS '$nis' sudah terdaftar (Baris $rowCount)");
+                    }
+
+                    $targetKelas = null;
+                    if (Auth::user()->isWaliKelas() && Auth::user()->guru) {
+                        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+                        $yearId = $activeYear ? $activeYear->id : null;
+                        $homeroom = \App\Models\ClassHomeroom::where('teacher_id', Auth::user()->guru->id)
+                            ->where('active', true)
+                            ->when($yearId, function($q) use ($yearId) {
+                                return $q->where('academic_year_id', $yearId);
+                            })
+                            ->first();
+                        $waliKelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', Auth::user()->guru->id)->first();
+                        if (!$waliKelas) {
+                            throw new \Exception("Anda tidak memiliki kelas binaan aktif (Baris $rowCount)");
+                        }
+
+                        if (!empty($namaKelas)) {
+                            $checkKelas = Kelas::where('nama_kelas', $namaKelas)->first();
+                            if (!$checkKelas || $checkKelas->id !== $waliKelas->id) {
+                                throw new \Exception("Anda hanya diperbolehkan mengimpor siswa ke kelas Anda sendiri '$waliKelas->nama_kelas' (Baris $rowCount)");
+                            }
+                        }
+                        $targetKelas = $waliKelas;
+                    } else {
+                        $targetKelas = Kelas::where('nama_kelas', $namaKelas)->first();
+                        if (!$targetKelas) {
+                            throw new \Exception("Kelas '$namaKelas' tidak ditemukan (Baris $rowCount)");
+                        }
+                    }
+
+                    $role = Role::where('name', 'siswa')->first();
+
+                    $user = User::create([
+                        'name' => $name,
+                        'email' => $email,
+                        'password' => Hash::make($password),
+                        'role_id' => $role->id,
+                        'is_active' => true,
+                    ]);
+
+                    Siswa::updateOrCreate(
+                        ['user_id' => $user->id],
+                        [
+                            'nama' => $user->name,
+                            'nis' => $nis,
+                            'nisn' => $nisn,
+                            'kelas_id' => $targetKelas->id,
+                            'jenis_kelamin' => $gender,
+                            'no_hp' => $no_hp,
+                            'alamat' => $alamat,
+                            'status' => 'Aktif',
+                        ]
+                    );
+                    $importedCount++;
+
+                } elseif ($type === 'nilai') {
+                    if (count($row) < 4) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $nis = trim($row[0]);
+                    $kodeMapel = trim($row[1]);
+                    $jenisNilai = trim($row[2]);
+                    $nilaiVal = intval(trim($row[3]));
+                    $keterangan = isset($row[4]) ? trim($row[4]) : null;
+
+                    $siswa = Siswa::where('nis', $nis)->first();
+                    if (!$siswa) {
+                        throw new \Exception("Siswa dengan NIS '$nis' tidak ditemukan (Baris $rowCount)");
+                    }
+
+                    $mapel = MataPelajaran::where('kode_mapel', $kodeMapel)->first();
+                    if (!$mapel) {
+                        throw new \Exception("Mapel dengan Kode '$kodeMapel' tidak ditemukan (Baris $rowCount)");
+                    }
+
+                    Nilai::create([
+                        'siswa_id' => $siswa->id,
+                        'mata_pelajaran_id' => $mapel->id,
+                        'jenis_nilai' => $jenisNilai,
+                        'nilai' => $nilaiVal,
+                        'keterangan' => $keterangan,
+                    ]);
+                    $importedCount++;
+
+                } elseif ($type === 'jadwal') {
+                    if (count($row) < 5) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $namaKelas = trim($row[0]);
+                    $kodeMapel = trim($row[1]);
+                    $hari = trim($row[2]);
+                    $jamMulai = trim($row[3]);
+                    $jamSelesai = trim($row[4]);
+
+                    $kelas = Kelas::where('nama_kelas', $namaKelas)->first();
+                    if (!$kelas) {
+                        throw new \Exception("Kelas '$namaKelas' tidak ditemukan (Baris $rowCount)");
+                    }
+
+                    $mapel = MataPelajaran::where('kode_mapel', $kodeMapel)->first();
+                    if (!$mapel) {
+                        throw new \Exception("Mapel dengan Kode '$kodeMapel' tidak ditemukan (Baris $rowCount)");
+                    }
+
+                    $guru = Auth::user()->guru;
+
+                    JadwalPelajaran::create([
+                        'guru_id' => $guru ? $guru->id : null,
+                        'kelas_id' => $kelas->id,
+                        'mata_pelajaran_id' => $mapel->id,
+                        'hari' => $hari,
+                        'jam_mulai' => $jamMulai,
+                        'jam_selesai' => $jamSelesai,
+                    ]);
+                    $importedCount++;
+
+                } elseif ($type === 'holidays') {
+                    if (count($row) < 5) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $tahunAjaran = trim($row[0]);
+                    $semester = trim($row[1]);
+                    $tanggalMulai = trim($row[2]);
+                    $tanggalSelesai = trim($row[3]);
+                    $keterangan = trim($row[4]);
+                    $unit = isset($row[5]) ? trim($row[5]) : 'Semua';
+                    $isNasional = isset($row[6]) && (strtolower(trim($row[6])) === 'ya' || trim($row[6]) === '1') ? 1 : 0;
+
+                    $ay = AcademicYear::where('tahun_ajaran', $tahunAjaran)->where('semester', $semester)->first();
+                    if (!$ay) {
+                        throw new \Exception("Tahun Ajaran '$tahunAjaran' Semester '$semester' tidak ditemukan (Baris $rowCount)");
+                    }
+
+                    AcademicHoliday::create([
+                        'academic_year_id' => $ay->id,
+                        'tanggal_mulai' => $tanggalMulai,
+                        'tanggal_selesai' => $tanggalSelesai,
+                        'keterangan' => $keterangan,
+                        'unit' => $unit,
+                        'is_nasional' => $isNasional,
+                    ]);
                     $importedCount++;
 
                 } elseif ($type === 'kelas') {
@@ -872,6 +1323,37 @@ class DashboardController extends Controller
 
                     $siswa->increment('poin_bk', $poinVal);
                     $importedCount++;
+                } elseif ($type === 'academic_years') {
+                    if (count($row) < 6) {
+                        throw new \Exception("Kolom tidak lengkap pada baris $rowCount");
+                    }
+                    $tahunAjaran = trim($row[0]);
+                    $semester = trim($row[1]);
+                    $tglMulai = trim($row[2]);
+                    $tglSelesai = trim($row[3]);
+                    $hariSekolah = trim($row[4]);
+                    $unit = trim($row[5]);
+
+                    $exists = AcademicYear::where('tahun_ajaran', $tahunAjaran)
+                        ->where('semester', $semester)
+                        ->where('unit', $unit)
+                        ->exists();
+
+                    if ($exists) {
+                        throw new \Exception("Tahun ajaran '$tahunAjaran' semester '$semester' unit '$unit' sudah terdaftar (Baris $rowCount)");
+                    }
+
+                    AcademicYear::create([
+                        'tahun_ajaran' => $tahunAjaran,
+                        'semester' => $semester,
+                        'tanggal_mulai' => $tglMulai,
+                        'tanggal_selesai' => $tglSelesai,
+                        'hari_sekolah' => $hariSekolah,
+                        'unit' => $unit,
+                        'active' => false,
+                        'locked' => false,
+                    ]);
+                    $importedCount++;
                 }
             } catch (\Exception $e) {
                 $errors[] = $e->getMessage();
@@ -937,40 +1419,24 @@ class DashboardController extends Controller
         // Update or create corresponding Guru or Siswa profile depending on new role
         $role = Role::find($request->role_id);
         if (in_array($role->name, ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])) {
-            if (!$user->guru) {
-                Guru::create([
-                    'user_id' => $user->id,
-                    'nama' => $user->name,
-                    'nip' => 'NIP-' . time(),
-                    'jenis_kelamin' => $request->jenis_kelamin,
-                    'password_plain' => $user->password_plain,
-                ]);
-            } else {
-                $guruData = [
-                    'nama' => $user->name,
-                    'jenis_kelamin' => $request->jenis_kelamin,
-                ];
-                if ($request->filled('password')) {
-                    $guruData['password_plain'] = $request->password;
-                }
-                $user->guru->update($guruData);
+            $guruData = [
+                'nama' => $user->name,
+                'jenis_kelamin' => $request->jenis_kelamin,
+            ];
+            if ($request->filled('password')) {
+                $guruData['password_plain'] = $request->password;
             }
+            Guru::updateOrCreate(['user_id' => $user->id], $guruData);
         } elseif ($role->name === 'siswa') {
-            if (!$user->siswa) {
-                $defaultKelas = Kelas::first();
-                Siswa::create([
-                    'user_id' => $user->id,
+            $defaultKelas = Kelas::first();
+            Siswa::updateOrCreate(
+                ['user_id' => $user->id],
+                [
                     'nama' => $user->name,
-                    'nis' => 'NIS-' . time(),
-                    'kelas_id' => $defaultKelas ? $defaultKelas->id : null,
+                    'kelas_id' => $user->siswa ? $user->siswa->kelas_id : ($defaultKelas ? $defaultKelas->id : null),
                     'jenis_kelamin' => $request->jenis_kelamin,
-                ]);
-            } else {
-                $user->siswa->update([
-                    'nama' => $user->name,
-                    'jenis_kelamin' => $request->jenis_kelamin,
-                ]);
-            }
+                ]
+            );
         }
 
         return redirect()->back()->with('success', 'User berhasil diperbarui.');
@@ -1069,22 +1535,193 @@ class DashboardController extends Controller
             abort(404, 'Detail guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('wali_kelas_id', $guru->id)->first();
-        if (!$kelas) {
-            $kelas = Kelas::first();
-        }
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+        $yearId = $activeYear ? $activeYear->id : null;
+        $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $guru->id)
+            ->where('active', true)
+            ->when($yearId, function($q) use ($yearId) {
+                return $q->where('academic_year_id', $yearId);
+            })
+            ->first();
+
+        $kelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', $guru->id)->first();
 
         $siswas = $kelas ? Siswa::where('kelas_id', $kelas->id)->get() : collect();
         $siswaIds = $siswas->pluck('id');
+
+        // All students that can be assigned (not currently in this class)
+        $availableStudents = Siswa::where(function($q) use ($kelas) {
+            if ($kelas) {
+                $q->where('kelas_id', '!=', $kelas->id)->orWhereNull('kelas_id');
+            }
+        })->orderBy('nama', 'asc')->get();
 
         $data = [
             'kelas' => $kelas,
             'siswas' => $siswas,
             'nilais' => Nilai::whereIn('siswa_id', $siswaIds)->get(),
+            'availableStudents' => $availableStudents,
         ];
 
         return view('dashboard.wali_kelas.wali_siswa', $data);
     }
+
+    public function waliSiswaStore(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isWaliKelas()) {
+            abort(403);
+        }
+
+        $guru = $user->guru;
+        if (!$guru) {
+            abort(404, 'Detail guru tidak ditemukan.');
+        }
+
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+        $yearId = $activeYear ? $activeYear->id : null;
+        $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $guru->id)
+            ->where('active', true)
+            ->when($yearId, function($q) use ($yearId) {
+                return $q->where('academic_year_id', $yearId);
+            })
+            ->first();
+
+        $kelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', $guru->id)->first();
+
+        if (!$kelas) {
+            return redirect()->back()->with('error', 'Anda tidak ditugaskan sebagai Wali Kelas di kelas manapun.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'nis' => 'required|string|unique:siswas',
+            'nisn' => 'nullable|string|unique:siswas',
+            'jenis_kelamin' => 'required|in:L,P',
+            'no_hp' => 'nullable|string',
+            'alamat' => 'nullable|string',
+        ]);
+
+        $siswaRole = Role::where('name', 'siswa')->firstOrFail();
+
+        $usr = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'password_plain' => $request->password,
+            'role_id' => $siswaRole->id,
+            'is_active' => true,
+        ]);
+
+        $siswa = Siswa::updateOrCreate(
+            ['user_id' => $usr->id],
+            [
+                'nis' => $request->nis,
+                'nisn' => $request->nisn,
+                'nama' => $request->name,
+                'kelas_id' => $kelas->id,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'status' => 'Aktif',
+            ]
+        );
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'wali_create_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'new_value' => json_encode($siswa->toArray()),
+        ]);
+
+        return redirect()->back()->with('success', 'Siswa berhasil ditambahkan ke kelas Anda.');
+    }
+
+    public function waliSiswaAssign(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isWaliKelas()) {
+            abort(403);
+        }
+
+        $guru = $user->guru;
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+        $yearId = $activeYear ? $activeYear->id : null;
+        $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $guru->id)
+            ->where('active', true)
+            ->when($yearId, function($q) use ($yearId) {
+                return $q->where('academic_year_id', $yearId);
+            })
+            ->first();
+
+        $kelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', $guru->id)->first();
+
+        if (!$kelas) {
+            return redirect()->back()->with('error', 'Anda tidak ditugaskan sebagai Wali Kelas di kelas manapun.');
+        }
+
+        $request->validate([
+            'siswa_id' => 'required|exists:siswas,id',
+        ]);
+
+        $siswa = Siswa::findOrFail($request->siswa_id);
+        $oldKelasId = $siswa->kelas_id;
+
+        $siswa->update(['kelas_id' => $kelas->id]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'wali_assign_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'old_value' => json_encode(['kelas_id' => $oldKelasId]),
+            'new_value' => json_encode(['kelas_id' => $kelas->id]),
+        ]);
+
+        return redirect()->back()->with('success', "Siswa {$siswa->nama} berhasil dipindahkan ke kelas Anda.");
+    }
+
+    public function waliSiswaRemove($id)
+    {
+        $user = Auth::user();
+        if (!$user->isWaliKelas()) {
+            abort(403);
+        }
+
+        $guru = $user->guru;
+        $activeYear = \App\Models\AcademicYear::where('active', true)->first();
+        $yearId = $activeYear ? $activeYear->id : null;
+        $homeroom = \App\Models\ClassHomeroom::where('teacher_id', $guru->id)
+            ->where('active', true)
+            ->when($yearId, function($q) use ($yearId) {
+                return $q->where('academic_year_id', $yearId);
+            })
+            ->first();
+
+        $kelas = $homeroom ? $homeroom->class : Kelas::where('wali_kelas_id', $guru->id)->first();
+
+        if (!$kelas) {
+            return redirect()->back()->with('error', 'Anda tidak ditugaskan sebagai Wali Kelas di kelas manapun.');
+        }
+
+        $siswa = Siswa::where('id', $id)->where('kelas_id', $kelas->id)->firstOrFail();
+        $siswa->update(['kelas_id' => null]);
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'wali_remove_siswa',
+            'entity' => 'siswas',
+            'entity_id' => $siswa->id,
+            'old_value' => json_encode(['kelas_id' => $kelas->id]),
+            'new_value' => json_encode(['kelas_id' => null]),
+        ]);
+
+        return redirect()->back()->with('success', "Siswa {$siswa->nama} berhasil dikeluarkan dari kelas Anda.");
+    }
+
 
     public function waliAbsensi()
     {
@@ -1810,20 +2447,23 @@ class DashboardController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'password_plain' => $request->password,
             'role_id' => $siswaRole->id,
         ]);
 
-        $siswa = Siswa::create([
-            'user_id' => $usr->id,
-            'nis' => $request->nis,
-            'nisn' => $request->nisn,
-            'nama' => $request->name,
-            'kelas_id' => $request->kelas_id,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'no_hp' => $request->no_hp,
-            'alamat' => $request->alamat,
-            'status' => 'Aktif',
-        ]);
+        $siswa = Siswa::updateOrCreate(
+            ['user_id' => $usr->id],
+            [
+                'nis' => $request->nis,
+                'nisn' => $request->nisn,
+                'nama' => $request->name,
+                'kelas_id' => $request->kelas_id,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'status' => 'Aktif',
+            ]
+        );
 
         AuditLog::create([
             'user_id' => $user->id,
@@ -1867,7 +2507,10 @@ class DashboardController extends Controller
         ]);
 
         if ($request->filled('password')) {
-            $usr->update(['password' => Hash::make($request->password)]);
+            $usr->update([
+                'password' => Hash::make($request->password),
+                'password_plain' => $request->password,
+            ]);
         }
 
         $siswa->update([
@@ -1880,6 +2523,10 @@ class DashboardController extends Controller
             'alamat' => $request->alamat,
             'status' => $request->status,
         ]);
+
+        // Sync users.is_active based on siswa status
+        $isActive = $request->status === 'Aktif';
+        $usr->update(['is_active' => $isActive]);
 
         AuditLog::create([
             'user_id' => $user->id,
@@ -2216,6 +2863,7 @@ class DashboardController extends Controller
             'password' => 'required|string|min:6',
             'role_id' => 'required|exists:roles,id',
             'jenis_kelamin' => 'required|in:L,P',
+            'nip' => 'nullable|string|max:50|unique:gurus,nip',
             'nik_nuptk' => 'nullable|string|max:50',
             'tempat_lahir' => 'nullable|string|max:255',
             'tanggal_lahir' => 'nullable|date',
@@ -2228,6 +2876,7 @@ class DashboardController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'password_plain' => $request->password,
             'role_id' => $request->role_id,
         ]);
 
@@ -2236,20 +2885,22 @@ class DashboardController extends Controller
             $fotoPath = '/storage/' . $request->file('foto')->store('teachers', 'public');
         }
 
-        Guru::create([
-            'user_id' => $user->id,
-            'nip' => 'NIP-' . time(),
-            'nama' => $user->name,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'nik_nuptk' => $request->nik_nuptk,
-            'tempat_lahir' => $request->tempat_lahir,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'pendidikan' => $request->pendidikan,
-            'password_plain' => $request->password,
-            'jtm' => $request->jtm ?? 0,
-            'foto' => $fotoPath,
-            'is_aktif' => true,
-        ]);
+        Guru::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'nip' => $request->filled('nip') ? $request->nip : 'NIP-' . time(),
+                'nama' => $user->name,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'nik_nuptk' => $request->nik_nuptk,
+                'tempat_lahir' => $request->tempat_lahir,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'pendidikan' => $request->pendidikan,
+                'password_plain' => $request->password,
+                'jtm' => $request->jtm ?? 0,
+                'foto' => $fotoPath,
+                'is_aktif' => true,
+            ]
+        );
 
         return redirect()->back()->with('success', 'Data Guru berhasil ditambahkan.');
     }
@@ -2277,6 +2928,7 @@ class DashboardController extends Controller
             'password' => 'nullable|string|min:6',
             'role_id' => 'required|exists:roles,id',
             'jenis_kelamin' => 'required|in:L,P',
+            'nip' => 'nullable|string|max:50|unique:gurus,nip,' . $guru->id,
             'nik_nuptk' => 'nullable|string|max:50',
             'tempat_lahir' => 'nullable|string|max:255',
             'tanggal_lahir' => 'nullable|date',
@@ -2293,6 +2945,7 @@ class DashboardController extends Controller
 
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+            $userData['password_plain'] = $request->password;
         }
 
         $user->update($userData);
@@ -2305,6 +2958,7 @@ class DashboardController extends Controller
         $guru->update([
             'nama' => $request->name,
             'jenis_kelamin' => $request->jenis_kelamin,
+            'nip' => $request->filled('nip') ? $request->nip : $guru->nip,
             'nik_nuptk' => $request->nik_nuptk,
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
@@ -2334,7 +2988,37 @@ class DashboardController extends Controller
         $guru->is_aktif = !$guru->is_aktif;
         $guru->save();
 
+        // Sync users.is_active so login is blocked/unblocked immediately
+        if ($guru->user_id) {
+            User::where('id', $guru->user_id)->update(['is_active' => $guru->is_aktif]);
+        }
+
         $statusStr = $guru->is_aktif ? 'diaktifkan' : 'dinonaktifkan';
         return redirect()->back()->with('success', "Guru {$guru->nama} berhasil {$statusStr}.");
+    }
+
+    public function toggleUserStatus($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        // Sync related guru or siswa profile status
+        if ($user->guru) {
+            $user->guru->update(['is_aktif' => $user->is_active]);
+        }
+        if ($user->siswa) {
+            $user->siswa->update([
+                'status' => $user->is_active ? 'Aktif' : 'Keluar',
+            ]);
+        }
+
+        $statusStr = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Akun {$user->name} berhasil {$statusStr}.");
     }
 }

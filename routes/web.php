@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/users', [DashboardController::class, 'storeUser'])->name('admin.users.store');
     Route::patch('/admin/users/{id}', [DashboardController::class, 'updateUser'])->name('admin.users.update');
     Route::delete('/admin/users/{id}', [DashboardController::class, 'deleteUser'])->name('admin.users.delete');
+    Route::post('/admin/users/{id}/toggle-status', [DashboardController::class, 'toggleUserStatus'])->name('admin.users.toggle_status');
 
     Route::get('/admin/guru', [DashboardController::class, 'adminGuruIndex'])->name('admin.guru.index');
     Route::post('/admin/guru', [DashboardController::class, 'storeGuru'])->name('admin.guru.store');
@@ -115,6 +116,9 @@ Route::middleware('auth')->group(function () {
     // Wali Kelas Routes (Enhanced)
     Route::get('/wali/dashboard', [WaliKelasController::class, 'index'])->name('wali.dashboard');
     Route::get('/wali/siswa', [DashboardController::class, 'waliSiswa'])->name('wali.siswa.index');
+    Route::post('/wali/siswa', [DashboardController::class, 'waliSiswaStore'])->name('wali.siswa.store');
+    Route::post('/wali/siswa/assign', [DashboardController::class, 'waliSiswaAssign'])->name('wali.siswa.assign');
+    Route::post('/wali/siswa/remove/{id}', [DashboardController::class, 'waliSiswaRemove'])->name('wali.siswa.remove');
     Route::get('/wali/siswa/360/{id}', [WaliKelasController::class, 'profile360'])->name('wali.siswa.360');
     Route::get('/wali/absensi/verifikasi', [WaliKelasController::class, 'absensiIndex'])->name('wali.absensi.verifikasi.index');
     Route::post('/wali/absensi/verifikasi/{id}', [WaliKelasController::class, 'verifySubmission'])->name('wali.absensi.verifikasi.store');

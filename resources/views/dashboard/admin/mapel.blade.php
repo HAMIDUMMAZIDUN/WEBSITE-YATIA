@@ -59,7 +59,14 @@
                                                 <input type="checkbox" class="item-checkbox rounded border-slate-300 text-emerald-650 focus:ring-emerald-500" data-delete-url="{{ route('admin.mapel.delete', $mpl->id) }}">
                                             </td>
                                             <td class="px-6 py-4 font-mono text-xs uppercase tracking-wider font-bold text-emerald-600">{{ $mpl->kode_mapel }}</td>
-                                            <td class="px-6 py-4 font-semibold text-slate-900">{{ $mpl->nama_mapel }}</td>
+                                            <td class="px-6 py-4 font-semibold text-slate-900">
+                                                <div class="flex items-center gap-2">
+                                                    <span>{{ $mpl->nama_mapel }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-105 text-slate-600 border border-slate-200">
+                                                        {{ $mpl->unit }}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td class="px-6 py-4 text-center">
                                                 <div class="flex items-center justify-center gap-3">
                                                     <button 
@@ -133,17 +140,18 @@
                             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Import / Export Masal</span>
                             <div class="flex gap-2">
                                 <a href="{{ route('data.template', 'mapel') }}" class="flex-1 text-center py-2 bg-slate-55 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-150 transition-colors">
+                                <a href="{{ route('data.template', 'mapel') }}" class="flex-1 text-center py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-150 transition-colors">
                                     Template
                                 </a>
                                 <a href="{{ route('data.export', 'mapel') }}" class="flex-1 text-center py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-150 transition-colors">
                                     Ekspor CSV
                                 </a>
                             </div>
-                            <form action="{{ route('data.import', 'mapel') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                            <form action="{{ route('data.import', 'mapel') }}" method="POST" enctype="multipart/form-data" class="space-y-2">
                                 @csrf
                                 <input type="file" name="file" required class="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
-                                <button type="submit" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-colors flex-shrink-0">
-                                    Unggah
+                                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-xl transition-colors">
+                                    Impor CSV
                                 </button>
                             </form>
                         </div>

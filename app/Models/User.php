@@ -27,6 +27,7 @@ class User extends Authenticatable
         'photo_profile',
         'password_plain',
         'role_id',
+        'is_active',
     ];
 
     /**
@@ -48,7 +49,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
         ];
     }
 
@@ -96,5 +98,51 @@ class User extends Authenticatable
     public function siswa()
     {
         return $this->hasOne(Siswa::class);
+    }
+
+    protected static function booted()
+    {
+        // Ensure every new account starts as active
+        static::creating(function ($user) {
+            if (!isset($user->is_active)) {
+                $user->is_active = true;
+            }
+        });
+
+        static::saved(function ($user) {
+            if ($user->role_id) {
+                $role = \App\Models\Role::find($user->role_id);
+                if ($role) {
+                    if (in_array($role->name, ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])) {
+                        if (!\App\Models\Guru::where('user_id', $user->id)->exists()) {
+                            \App\Models\Guru::create([
+                                'user_id'        => $user->id,
+                                'nama'           => $user->name,
+                                'nip'            => 'NIP-' . time() . '-' . rand(10, 99),
+                                'jenis_kelamin'  => 'L',
+                                'password_plain' => $user->password_plain ?? 'password123',
+                                'is_aktif'       => true,
+                            ]);
+                        } else {
+                            $user->guru->update(['nama' => $user->name]);
+                        }
+                    } elseif ($role->name === 'siswa') {
+                        if (!\App\Models\Siswa::where('user_id', $user->id)->exists()) {
+                            $defaultKelas = \App\Models\Kelas::first();
+                            \App\Models\Siswa::create([
+                                'user_id'       => $user->id,
+                                'nama'          => $user->name,
+                                'nis'           => 'NIS-' . time() . '-' . rand(10, 99),
+                                'jenis_kelamin' => 'L',
+                                'kelas_id'      => $defaultKelas ? $defaultKelas->id : null,
+                                'status'        => 'Aktif',
+                            ]);
+                        } else {
+                            $user->siswa->update(['nama' => $user->name]);
+                        }
+                    }
+                }
+            }
+        });
     }
 }
