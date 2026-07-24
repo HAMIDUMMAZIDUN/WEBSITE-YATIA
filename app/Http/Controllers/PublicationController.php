@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -17,7 +17,7 @@ class PublicationController extends Controller
     private function checkSuperAdmin()
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (!$user || (!$user->isSuperAdmin() && !$user->isAdmin())) {
             abort(403);
         }
     }
@@ -29,7 +29,7 @@ class PublicationController extends Controller
     {
         $this->checkSuperAdmin();
         $articles = Article::latest()->get();
-        return view('dashboard.admin.publications.berita', compact('articles'));
+        return view('dashboard.superadmin.publications.berita', compact('articles'));
     }
 
     public function storeBerita(Request $request)
@@ -148,7 +148,7 @@ class PublicationController extends Controller
     {
         $this->checkSuperAdmin();
         $galleries = Gallery::latest()->get();
-        return view('dashboard.admin.publications.galeri', compact('galleries'));
+        return view('dashboard.superadmin.publications.galeri', compact('galleries'));
     }
 
     public function storeGaleri(Request $request)
@@ -270,7 +270,7 @@ class PublicationController extends Controller
     {
         $this->checkSuperAdmin();
         $socials = SocialMedia::all();
-        return view('dashboard.admin.publications.medsos', compact('socials'));
+        return view('dashboard.superadmin.publications.medsos', compact('socials'));
     }
 
     public function updateMedsos(Request $request)
@@ -310,7 +310,7 @@ class PublicationController extends Controller
     {
         $this->checkSuperAdmin();
         $banners = Banner::orderBy('order')->get();
-        return view('dashboard.admin.publications.banner', compact('banners'));
+        return view('dashboard.superadmin.publications.banner', compact('banners'));
     }
 
     public function storeBanner(Request $request)

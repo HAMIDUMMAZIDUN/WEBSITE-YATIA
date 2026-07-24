@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -32,8 +32,10 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isAdmin()) {
             return $this->superAdminDashboard($request);
+        } elseif ($user->isSuperAdmin()) {
+            return redirect()->route('admin.users.index');
         } elseif ($user->isWaliKelas()) {
             return $this->waliKelasDashboard();
         } elseif ($user->isGuru()) {
@@ -132,7 +134,7 @@ class DashboardController extends Controller
         if ($export === 'excel') {
             return $this->exportRekapExcel($tableData, $totals, $selectedUnit, $date);
         } elseif ($export === 'pdf') {
-            return view('dashboard.admin.rekap_print', [
+            return view('dashboard.admin.sistem.rekap_print', [
                 'tableData' => $tableData,
                 'totals' => $totals,
                 'selectedUnit' => $selectedUnit,
@@ -171,7 +173,7 @@ class DashboardController extends Controller
             'mapel' => MataPelajaran::all(),
             'roles' => Role::all(),
         ];
-        return view('dashboard.admin.super_admin', $data);
+        return view('dashboard.superadmin.dashboard', $data);
     }
 
     private function exportRekapExcel($tableData, $totals, $selectedUnit, $date)
@@ -243,7 +245,7 @@ class DashboardController extends Controller
             'mapels' => MataPelajaran::all(),
             'siswas' => Siswa::all(),
         ];
-        return view('dashboard.guru.guru', $data);
+        return view('dashboard.guru.dashboard', $data);
     }
 
     private function waliKelasDashboard()
@@ -282,7 +284,7 @@ class DashboardController extends Controller
             'pelanggarans' => PelanggaranBk::with(['siswa', 'guruBk'])->get(),
             'gurus' => Guru::all(),
         ];
-        return view('dashboard.bk.guru_bk', $data);
+        return view('dashboard.guru_bk.dashboard', $data);
     }
 
     // ACTIONS FOR DATA MANAGEMENT
@@ -290,6 +292,10 @@ class DashboardController extends Controller
     // 1. Super Admin Actions
     public function storeUser(Request $request)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isSuperAdmin() && !$currentUser->isAdmin()) {
+            abort(403);
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'nullable|string|max:255|unique:users,username',
@@ -369,6 +375,10 @@ class DashboardController extends Controller
 
     public function deleteUser($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isSuperAdmin() && !$currentUser->isAdmin()) {
+            abort(403);
+        }
         $user = User::findOrFail($id);
         if ($user->id === Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus diri sendiri.');
@@ -379,6 +389,10 @@ class DashboardController extends Controller
 
     public function storeKelas(Request $request)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
             'wali_kelas_id' => 'nullable|exists:gurus,id',
@@ -391,6 +405,10 @@ class DashboardController extends Controller
 
     public function storeMapel(Request $request)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $request->validate([
             'nama_mapel' => 'required|string|max:255',
             'kode_mapel' => 'required|string|max:50|unique:mata_pelajarans',
@@ -1375,6 +1393,10 @@ class DashboardController extends Controller
 
     public function updateUser(Request $request, $id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isSuperAdmin() && !$currentUser->isAdmin()) {
+            abort(403);
+        }
         $user = User::findOrFail($id);
 
         $request->validate([
@@ -1445,7 +1467,7 @@ class DashboardController extends Controller
     public function kelasIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1460,11 +1482,15 @@ class DashboardController extends Controller
             'gurus' => Guru::all(),
             'selected_unit' => $unit,
         ];
-        return view('dashboard.admin.kelas', $data);
+        return view('dashboard.admin.master_data.kelas', $data);
     }
 
     public function updateKelas(Request $request, $id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $kelas = Kelas::findOrFail($id);
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
@@ -1478,6 +1504,10 @@ class DashboardController extends Controller
 
     public function deleteKelas($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $kelas = Kelas::findOrFail($id);
         $kelas->delete();
         return redirect()->back()->with('success', 'Kelas berhasil dihapus.');
@@ -1486,7 +1516,7 @@ class DashboardController extends Controller
     public function mapelIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1500,11 +1530,15 @@ class DashboardController extends Controller
             'mapel' => $query->get(),
             'selected_unit' => $unit,
         ];
-        return view('dashboard.admin.mapel', $data);
+        return view('dashboard.admin.master_data.mapel', $data);
     }
 
     public function updateMapel(Request $request, $id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $mapel = MataPelajaran::findOrFail($id);
         $request->validate([
             'nama_mapel' => 'required|string|max:255',
@@ -1518,6 +1552,10 @@ class DashboardController extends Controller
 
     public function deleteMapel($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $mapel = MataPelajaran::findOrFail($id);
         $mapel->delete();
         return redirect()->back()->with('success', 'Mata Pelajaran berhasil dihapus.');
@@ -1563,7 +1601,7 @@ class DashboardController extends Controller
             'availableStudents' => $availableStudents,
         ];
 
-        return view('dashboard.wali_kelas.wali_siswa', $data);
+        return view('dashboard.wali_kelas.data_siswa', $data);
     }
 
     public function waliSiswaStore(Request $request)
@@ -1749,7 +1787,7 @@ class DashboardController extends Controller
             'presensi' => Presensi::whereIn('siswa_id', $siswaIds)->get(),
         ];
 
-        return view('dashboard.wali_kelas.wali_absensi', $data);
+        return view('dashboard.wali_kelas.absensi.index', $data);
     }
 
     // =============================================================
@@ -1759,7 +1797,7 @@ class DashboardController extends Controller
     public function adminAbsensiIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1803,7 +1841,7 @@ class DashboardController extends Controller
             ];
         });
 
-        return view('dashboard.admin.absensi', [
+        return view('dashboard.admin.kesiswaan.absensi', [
             'assignments'   => $assignments,
             'kelasAll'      => $kelasAll,
             'siswaUsers'    => $siswaUsers,
@@ -1816,7 +1854,7 @@ class DashboardController extends Controller
     public function adminAbsensiAssign(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1855,7 +1893,7 @@ class DashboardController extends Controller
     public function adminAbsensiRevoke($id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1868,7 +1906,7 @@ class DashboardController extends Controller
     public function adminAbsensiToggle($id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -1882,7 +1920,7 @@ class DashboardController extends Controller
     public function adminUsersIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
             abort(403);
         }
 
@@ -1890,7 +1928,7 @@ class DashboardController extends Controller
             'users' => User::with('role')->get(),
             'roles' => Role::all(),
         ];
-        return view('dashboard.admin.users', $data);
+        return view('dashboard.admin.sistem.users', $data);
     }
 
     public function guruJadwalIndex()
@@ -1910,7 +1948,7 @@ class DashboardController extends Controller
             'kelas' => Kelas::all(),
             'mapels' => MataPelajaran::all(),
         ];
-        return view('dashboard.guru.guru_jadwal', $data);
+        return view('dashboard.guru.jadwal_jurnal', $data);
     }
 
     public function guruElearningIndex()
@@ -1930,7 +1968,7 @@ class DashboardController extends Controller
             'kelas' => Kelas::all(),
             'mapels' => MataPelajaran::all(),
         ];
-        return view('dashboard.guru.guru_elearning', $data);
+        return view('dashboard.guru.materi_tugas', $data);
     }
 
     public function guruNilaiIndex()
@@ -1951,7 +1989,7 @@ class DashboardController extends Controller
             'mapels' => MataPelajaran::all(),
             'nilais' => Nilai::with(['siswa', 'mataPelajaran'])->latest()->take(20)->get(),
         ];
-        return view('dashboard.guru.guru_nilai', $data);
+        return view('dashboard.guru.asesmen_nilai', $data);
     }
 
     public function bkPelanggaranIndex()
@@ -1968,7 +2006,7 @@ class DashboardController extends Controller
             'pelanggarans' => PelanggaranBk::with(['siswa', 'guruBk'])->get(),
             'gurus' => Guru::all(),
         ];
-        return view('dashboard.bk.bk_pelanggaran', $data);
+        return view('dashboard.guru_bk.program_bk', $data);
     }
 
     public function guruCbtIndex()
@@ -1985,13 +2023,13 @@ class DashboardController extends Controller
         $data = [
             'guru' => $guru,
         ];
-        return view('dashboard.guru.guru_cbt', $data);
+        return view('dashboard.guru.cbt', $data);
     }
 
     public function profilMadrasahIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2003,7 +2041,7 @@ class DashboardController extends Controller
     public function updateProfilMadrasah(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2068,18 +2106,18 @@ class DashboardController extends Controller
     public function academicYearsIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
         $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->orderBy('semester', 'asc')->get();
-        return view('dashboard.admin.tahun_ajaran', compact('years'));
+        return view('dashboard.admin.pengaturan.tahun_ajaran', compact('years'));
     }
 
     public function storeAcademicYear(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2126,7 +2164,7 @@ class DashboardController extends Controller
     public function activateAcademicYear(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2170,7 +2208,7 @@ class DashboardController extends Controller
     public function lockAcademicYear(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2191,7 +2229,7 @@ class DashboardController extends Controller
     public function unlockAcademicYear(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2217,7 +2255,7 @@ class DashboardController extends Controller
     public function copyAcademicYearConfig(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2282,7 +2320,7 @@ class DashboardController extends Controller
     public function holidaysIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2290,13 +2328,13 @@ class DashboardController extends Controller
         $years = AcademicYear::orderBy('tahun_ajaran', 'desc')->get();
         $activeYear = AcademicYear::where('active', true)->first();
 
-        return view('dashboard.admin.tahun_ajaran_libur', compact('holidays', 'years', 'activeYear'));
+        return view('dashboard.admin.pengaturan.tahun_ajaran_libur', compact('holidays', 'years', 'activeYear'));
     }
 
     public function storeHoliday(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2358,7 +2396,7 @@ class DashboardController extends Controller
     public function deleteHoliday($id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2380,7 +2418,7 @@ class DashboardController extends Controller
     public function siswaIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2419,13 +2457,13 @@ class DashboardController extends Controller
         $siswas = $query->paginate(20)->withQueryString();
         $kelas = Kelas::where('unit', $unit)->get();
 
-        return view('dashboard.admin.siswa', compact('siswas', 'kelas', 'unit'));
+        return view('dashboard.admin.master_data.siswa', compact('siswas', 'kelas', 'unit'));
     }
 
     public function storeSiswa(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2479,7 +2517,7 @@ class DashboardController extends Controller
     public function updateSiswa(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2543,7 +2581,7 @@ class DashboardController extends Controller
     public function deleteSiswa($id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2569,7 +2607,7 @@ class DashboardController extends Controller
     public function siswaHistory($id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2628,26 +2666,26 @@ class DashboardController extends Controller
             return Carbon::parse($b['date'])->timestamp <=> Carbon::parse($a['date'])->timestamp;
         });
 
-        return view('dashboard.admin.siswa_history', compact('siswa', 'timeline'));
+        return view('dashboard.admin.kesiswaan.riwayat', compact('siswa', 'timeline'));
     }
 
     public function pindahKelasIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
         $kelas = Kelas::all();
         $siswas = Siswa::where('status', 'Aktif')->orderBy('nama')->get();
 
-        return view('dashboard.admin.pindah_kelas', compact('kelas', 'siswas'));
+        return view('dashboard.admin.kesiswaan.pindah_kelas', compact('kelas', 'siswas'));
     }
 
     public function pindahKelasStore(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2697,7 +2735,7 @@ class DashboardController extends Controller
     public function naikKelasIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2705,13 +2743,13 @@ class DashboardController extends Controller
             $q->where('status', 'Aktif');
         }])->get();
 
-        return view('dashboard.admin.naik_kelas', compact('kelas'));
+        return view('dashboard.admin.kesiswaan.naik_kelas', compact('kelas'));
     }
 
     public function naikKelasStore(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2779,7 +2817,7 @@ class DashboardController extends Controller
     public function alumniIndex(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2796,13 +2834,13 @@ class DashboardController extends Controller
 
         $alumni = $query->paginate(20)->withQueryString();
 
-        return view('dashboard.admin.alumni', compact('alumni'));
+        return view('dashboard.admin.kesiswaan.alumni', compact('alumni'));
     }
 
     public function updateAlumniContact(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2831,7 +2869,7 @@ class DashboardController extends Controller
     public function adminGuruIndex()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403);
         }
 
@@ -2840,11 +2878,15 @@ class DashboardController extends Controller
             'roles' => Role::whereIn('name', ['guru', 'wali_kelas', 'guru_bk', 'wali_kelas_guru'])->get(),
             'classes' => Kelas::all(),
         ];
-        return view('dashboard.admin.guru_admin', $data);
+        return view('dashboard.admin.master_data.guru', $data);
     }
 
     public function storeGuru(Request $request)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -2907,6 +2949,10 @@ class DashboardController extends Controller
 
     public function updateGuru(Request $request, $id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $guru = Guru::findOrFail($id);
         $user = $guru->user;
 
@@ -2973,6 +3019,10 @@ class DashboardController extends Controller
 
     public function deleteGuru($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $guru = Guru::findOrFail($id);
         $user = $guru->user;
         if ($user->id === Auth::id()) {
@@ -2984,6 +3034,10 @@ class DashboardController extends Controller
 
     public function toggleGuruStatus($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isAdmin()) {
+            abort(403);
+        }
         $guru = Guru::findOrFail($id);
         $guru->is_aktif = !$guru->is_aktif;
         $guru->save();
@@ -2999,6 +3053,10 @@ class DashboardController extends Controller
 
     public function toggleUserStatus($id)
     {
+        $currentUser = Auth::user();
+        if (!$currentUser->isSuperAdmin() && !$currentUser->isAdmin()) {
+            abort(403);
+        }
         $user = User::findOrFail($id);
 
         if ($user->id === Auth::id()) {

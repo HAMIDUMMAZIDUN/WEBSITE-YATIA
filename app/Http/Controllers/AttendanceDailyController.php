@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -27,7 +27,7 @@ class AttendanceDailyController extends Controller
         $user = Auth::user();
 
         // Super Admin or Wali Kelas can view/manage, but student officers are restricted
-        if ($user->isSuperAdmin() || $user->isWaliKelas()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isWaliKelas()) {
             return true;
         }
 
@@ -156,7 +156,7 @@ class AttendanceDailyController extends Controller
             }
         }
 
-        return view('dashboard.absensi.absensi_input', [
+        return view('dashboard.absensi.input', [
             'kelas' => $kelas,
             'date' => $date,
             'siswas' => $siswas,

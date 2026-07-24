@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Super Admin</span>
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Admin</span>
                 <h2 class="font-bold text-2xl text-slate-900 dark:text-slate-100 leading-tight">Manajemen Absensi</h2>
             </div>
             <div class="flex gap-2">

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -15,7 +15,7 @@ class SystemController extends Controller
     private function checkSuperAdmin()
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             abort(403);
         }
     }
@@ -43,7 +43,7 @@ class SystemController extends Controller
 
         $logs = $query->latest()->paginate(25)->withQueryString();
         
-        return view('dashboard.admin.system.logs', compact('logs'));
+        return view('dashboard.admin.sistem.logs', compact('logs'));
     }
 
     // ==========================================
@@ -82,14 +82,14 @@ class SystemController extends Controller
 
         // Get filter options
         $users = User::whereIn('role_id', function($q) {
-            $q->select('id')->from('roles')->where('name', 'super_admin');
+            $q->select('id')->from('roles')->whereIn('name', ['super_admin', 'admin']);
         })->orWhereIn('id', function($q) {
             $q->select('user_id')->from('audit_logs');
         })->get();
         
         $entities = AuditLog::select('entity')->distinct()->whereNotNull('entity')->pluck('entity');
         
-        return view('dashboard.admin.system.audit', compact('logs', 'users', 'entities'));
+        return view('dashboard.admin.sistem.audit', compact('logs', 'users', 'entities'));
     }
 
     public function clearAuditLogs(Request $request)
@@ -230,7 +230,7 @@ class SystemController extends Controller
         $dbConnection = config('database.default');
         $dbName = config("database.connections.{$dbConnection}.database");
 
-        return view('dashboard.admin.system.backup', compact('files', 'dbConnection', 'dbName'));
+        return view('dashboard.admin.sistem.backup', compact('files', 'dbConnection', 'dbName'));
     }
 
     public function createBackup()

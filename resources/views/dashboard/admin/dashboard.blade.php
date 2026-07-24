@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center bg-white dark:bg-slate-900 px-6 py-4 rounded-xl shadow-sm dark:shadow-lg border border-slate-200 dark:border-slate-800 transition-colors duration-300">
             <h2 class="font-bold text-xl text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                 <span class="w-3.5 h-3.5 rounded bg-emerald-500"></span>
-                {{ __('Super Admin Dashboard') }}
+                {{ __('Admin Dashboard') }}
             </h2>
             <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 TA 2026/2027 • <span class="text-emerald-600 dark:text-emerald-400 font-bold">Aktif</span>
@@ -14,17 +14,19 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Toast Notifications -->
-            @if(session('success'))
-                <div class="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl flex items-center gap-3 shadow-sm dark:shadow-md animate-fade-in">
-                    <svg class="w-5 h-5 text-emerald-500 dark:text-emerald-450 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span class="text-sm font-semibold">{{ session('success') }}</span>
-                </div>
-            @endif
+            <div id="notifikasi" class="scroll-mt-6">
+                @if(session('success'))
+                    <div class="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl flex items-center gap-3 shadow-sm dark:shadow-md animate-fade-in">
+                        <svg class="w-5 h-5 text-emerald-500 dark:text-emerald-450 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="text-sm font-semibold">{{ session('success') }}</span>
+                    </div>
+                @endif
+            </div>
 
             <!-- Welcome Panel -->
-            <div class="bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-sm dark:shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transition-colors duration-300">
+            <div id="ringkasan" class="scroll-mt-6 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-3xl p-6 shadow-sm dark:shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transition-colors duration-300">
                 <div>
-                    <h3 class="text-2xl font-extrabold tracking-tight mt-1 text-slate-900 dark:text-white">Selamat datang, Super Admin</h3>
+                    <h3 class="text-2xl font-extrabold tracking-tight mt-1 text-slate-900 dark:text-white">Selamat datang, Admin</h3>
                     <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">
                         Ringkasan operasional madrasah hari ini
                     </p>
@@ -141,7 +143,7 @@
                 </div>
 
                 <!-- Filter Form -->
-                <form id="filter-form" method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-150/80 dark:border-slate-800">
+                <form id="akses-cepat" method="GET" action="{{ route('dashboard') }}" class="scroll-mt-6 flex flex-wrap items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-150/80 dark:border-slate-800">
                     <!-- Unit Selector -->
                     <div class="relative flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 w-full sm:w-auto shadow-sm">
                         <svg class="w-4 h-4 text-slate-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
@@ -288,7 +290,7 @@
                 </div>
 
                 <!-- Table of Classes Rekapitulasi -->
-                <div>
+                <div id="absensi" class="scroll-mt-6">
                     <h4 class="text-sm font-bold text-slate-850 dark:text-slate-200 mb-3.5">Rekapitulasi Kehadiran Harian per Kelas</h4>
                     <div class="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 shadow-inner">
                         <table class="w-full text-left border-collapse text-sm">
@@ -343,7 +345,7 @@
             </div>
 
             <!-- Bottom Row: Recent Activities (Expanded Width for better layout) -->
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800/60 transition-colors duration-300">
+            <div id="aktivitas" class="scroll-mt-6 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800/60 transition-colors duration-300">
                 <h3 class="text-lg font-extrabold text-slate-900 dark:text-white mb-4">Aktivitas Terbaru</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-1">
                     @forelse($latest_activities as $activity)

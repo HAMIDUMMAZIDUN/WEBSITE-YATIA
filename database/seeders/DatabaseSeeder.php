@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
         // 1. Seed Roles
         $roles = [
             ['name' => 'super_admin', 'display_name' => 'Super Admin'],
+            ['name' => 'admin',       'display_name' => 'Admin'],
             ['name' => 'guru',        'display_name' => 'Guru Mata Pelajaran'],
             ['name' => 'wali_kelas',  'display_name' => 'Wali Kelas'],
             ['name' => 'absensi',     'display_name' => 'Absensi'],

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -52,7 +52,7 @@ class BkCaseController extends Controller
             ->orderBy('opened_at', 'desc')
             ->get();
 
-        return view('dashboard.bk.bk_triase', [
+        return view('dashboard.guru_bk.rujukan_masuk', [
             'referralsQueue' => $referralsQueue,
             'activeCases' => $activeCases,
         ]);
@@ -147,7 +147,7 @@ class BkCaseController extends Controller
             'entity_id' => $case->id,
         ]);
 
-        return view('dashboard.bk.bk_case_detail', [
+        return view('dashboard.guru_bk.data_siswa_kasus', [
             'case' => $case,
         ]);
     }

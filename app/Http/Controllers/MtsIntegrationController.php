@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -30,7 +30,7 @@ class MtsIntegrationController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -69,7 +69,7 @@ class MtsIntegrationController extends Controller
             ->take(10)
             ->get();
 
-        return view('dashboard.admin.integrasi_mts', compact(
+        return view('dashboard.admin.sistem.integrasi', compact(
             'connected',
             'errorMessage',
             'externalCounts',
@@ -81,7 +81,7 @@ class MtsIntegrationController extends Controller
     public function sync(Request $request)
     {
         $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
+        if (!$user->isAdmin()) {
             abort(403, 'Akses ditolak.');
         }
 

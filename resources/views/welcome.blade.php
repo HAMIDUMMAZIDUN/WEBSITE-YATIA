@@ -86,7 +86,7 @@
     @php
     $firstBanner = $banners->first();
     $heroTitle = $firstBanner ? $firstBanner->title : 'Platform Digital Administrasi & Akademik YATIA';
-    $heroSubtitle = $firstBanner ? $firstBanner->subtitle : 'Menghubungkan Super Admin, Guru, Wali Kelas, Siswa, dan Guru BK dalam satu ekosistem administrasi sekolah terpadu, modern, aman, dan mudah digunakan.';
+    $heroSubtitle = $firstBanner ? $firstBanner->subtitle : 'Menghubungkan Admin, Guru, Wali Kelas, Siswa, dan Guru BK dalam satu ekosistem administrasi sekolah terpadu, modern, aman, dan mudah digunakan.';
     $heroBg = ($firstBanner && $firstBanner->image_path) ? $firstBanner->image_path : asset('images/bg-school.jpg');
     $heroLink = ($firstBanner && $firstBanner->link_url) ? $firstBanner->link_url : route('login');
     @endphp
@@ -146,10 +146,10 @@
                 Aplikasi ini dirancang untuk mendistribusikan wewenang secara presisi sesuai dengan tugas operasional masing-masing civitas akademika.
             </p>
             <div class="grid md:grid-cols-5 gap-6 pt-10">
-                <!-- Super Admin -->
+                <!-- Admin -->
                 <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md dark:shadow-none transition-all flex flex-col items-center text-center">
-                    <h3 class="text-lg font-bold text-black dark:text-white mb-2">Super Admin</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-405">Akses penuh, CRUD data master pengguna, kelas, kurikulum, dan ekspor laporan global.</p>
+                    <h3 class="text-lg font-bold text-black dark:text-white mb-2">Admin</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-405">Kelola publikasi website sekolah dan manajemen pengguna (tambah, edit, dan hapus akun).</p>
                 </div>
                 <!-- Guru Mapel -->
                 <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md dark:shadow-none transition-all flex flex-col items-center text-center">

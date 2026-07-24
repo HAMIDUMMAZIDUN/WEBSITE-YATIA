@@ -13,7 +13,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ activeTab: 'yayasan' }">
+    <div class="py-12" x-data="{ activeTab: new URLSearchParams(window.location.search).get('tab') || 'yayasan' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
             <!-- Toast Notifications -->
             @if(session('success'))

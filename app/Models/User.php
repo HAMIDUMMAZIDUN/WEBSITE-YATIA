@@ -70,6 +70,11 @@ class User extends Authenticatable
         return $this->hasRole('super_admin');
     }
 
+    public function isAdmin()
+    {
+        return $this->hasRole('admin');
+    }
+
     public function isGuru()
     {
         return $this->hasRole('guru') || $this->hasRole('wali_kelas') || $this->hasRole('wali_kelas_guru');
