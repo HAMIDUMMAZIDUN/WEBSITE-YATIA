@@ -255,9 +255,9 @@ class MtsIntegrationController extends Controller
     {
         $external = DB::connection('mts')->table('e_siswa')->get();
         $count = 0;
-        $siswaRole = Role::where('name', 'siswa')->first();
+        $siswaRole = Role::where('name', 'absensi')->first();
         if (!$siswaRole) {
-            throw new \Exception('Role "siswa" tidak ditemukan di database.');
+            throw new \Exception('Role "absensi" tidak ditemukan di database.');
         }
 
         foreach ($external as $ex) {

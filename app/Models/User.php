@@ -82,7 +82,12 @@ class User extends Authenticatable
 
     public function isSiswa()
     {
-        return $this->hasRole('siswa');
+        return $this->hasRole('absensi');
+    }
+
+    public function isAbsensi()
+    {
+        return $this->hasRole('absensi');
     }
 
     public function isGuruBk()
@@ -122,11 +127,11 @@ class User extends Authenticatable
                                 'jenis_kelamin'  => 'L',
                                 'password_plain' => $user->password_plain ?? 'password123',
                                 'is_aktif'       => true,
-                            ]);
+                             ]);
                         } else {
                             $user->guru->update(['nama' => $user->name]);
                         }
-                    } elseif ($role->name === 'siswa') {
+                    } elseif ($role->name === 'absensi') {
                         if (!\App\Models\Siswa::where('user_id', $user->id)->exists()) {
                             $defaultKelas = \App\Models\Kelas::first();
                             \App\Models\Siswa::create([

@@ -134,7 +134,7 @@
                                                     {{ $usr->role->name === 'super_admin' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : '' }}
                                                     {{ $usr->role->name === 'guru' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400' : '' }}
                                                     {{ $usr->role->name === 'wali_kelas' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' : '' }}
-                                                    {{ $usr->role->name === 'siswa' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : '' }}
+                                                    {{ $usr->role->name === 'absensi' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : '' }}
                                                     {{ $usr->role->name === 'guru_bk' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400' : '' }}
                                                     {{ $usr->role->name === 'wali_kelas_guru' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400' : '' }}
                                                 ">

@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'super_admin', 'display_name' => 'Super Admin'],
             ['name' => 'guru',        'display_name' => 'Guru Mata Pelajaran'],
             ['name' => 'wali_kelas',  'display_name' => 'Wali Kelas'],
-            ['name' => 'siswa',       'display_name' => 'Siswa'],
+            ['name' => 'absensi',     'display_name' => 'Absensi'],
             ['name' => 'guru_bk',     'display_name' => 'Guru BK'],
             ['name' => 'wali_kelas_guru', 'display_name' => 'Wali Kelas & Guru Mapel'],
         ];
@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
         $guruRole = Role::where('name', 'guru')->first();
         $waliRole = Role::where('name', 'wali_kelas')->first();
         $bkRole = Role::where('name', 'guru_bk')->first();
-        $siswaRole = Role::where('name', 'siswa')->first();
+        $absensiRole = Role::where('name', 'absensi')->first();
 
         // 2. Create Super Admin accounts
         $adminHamid = User::firstOrCreate(
@@ -313,7 +313,7 @@ class DatabaseSeeder extends Seeder
                     'name' => $name,
                     'nik' => 'NIS' . str_pad($i, 5, '0', STR_PAD_LEFT),
                     'password' => Hash::make('hamidun123'),
-                    'role_id' => $siswaRole->id,
+                    'role_id' => $absensiRole->id,
                 ]
             );
 

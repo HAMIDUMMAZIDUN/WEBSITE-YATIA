@@ -354,7 +354,7 @@ class DashboardController extends Controller
                     'password_plain' => $request->password,
                 ]
             );
-        } elseif ($role->name === 'siswa') {
+        } elseif ($role->name === 'absensi') {
             Siswa::updateOrCreate(
                 ['user_id' => $user->id],
                 [
@@ -987,7 +987,7 @@ class DashboardController extends Controller
                                 'jenis_kelamin' => $gender,
                             ]
                         );
-                    } elseif ($role->name === 'siswa') {
+                    } elseif ($role->name === 'absensi') {
                         $defaultKelas = Kelas::first();
                         Siswa::updateOrCreate(
                             ['user_id' => $user->id],
@@ -1108,7 +1108,7 @@ class DashboardController extends Controller
                         }
                     }
 
-                    $role = Role::where('name', 'siswa')->first();
+                    $role = Role::where('name', 'absensi')->first();
 
                     $user = User::create([
                         'name' => $name,
@@ -1427,7 +1427,7 @@ class DashboardController extends Controller
                 $guruData['password_plain'] = $request->password;
             }
             Guru::updateOrCreate(['user_id' => $user->id], $guruData);
-        } elseif ($role->name === 'siswa') {
+        } elseif ($role->name === 'absensi') {
             $defaultKelas = Kelas::first();
             Siswa::updateOrCreate(
                 ['user_id' => $user->id],
@@ -1604,7 +1604,7 @@ class DashboardController extends Controller
             'alamat' => 'nullable|string',
         ]);
 
-        $siswaRole = Role::where('name', 'siswa')->firstOrFail();
+        $siswaRole = Role::where('name', 'absensi')->firstOrFail();
 
         $usr = User::create([
             'name' => $request->name,
@@ -1777,7 +1777,7 @@ class DashboardController extends Controller
 
         // All users with siswa role who have a siswa record
         $siswaUsers = User::with(['siswa.kelas', 'role'])
-            ->whereHas('role', fn($q) => $q->where('name', 'siswa'))
+            ->whereHas('role', fn($q) => $q->where('name', 'absensi'))
             ->whereHas('siswa')
             ->orderBy('name')
             ->get();
@@ -2441,7 +2441,7 @@ class DashboardController extends Controller
             'alamat' => 'nullable|string',
         ]);
 
-        $siswaRole = Role::where('name', 'siswa')->firstOrFail();
+        $siswaRole = Role::where('name', 'absensi')->firstOrFail();
 
         $usr = User::create([
             'name' => $request->name,
