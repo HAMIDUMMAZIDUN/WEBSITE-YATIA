@@ -173,7 +173,7 @@ class DashboardController extends Controller
             'mapel' => MataPelajaran::all(),
             'roles' => Role::all(),
         ];
-        return view('dashboard.superadmin.dashboard', $data);
+        return view('dashboard.admin.dashboard', $data);
     }
 
     private function exportRekapExcel($tableData, $totals, $selectedUnit, $date)
