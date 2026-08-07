@@ -72,7 +72,7 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return $this->hasRole('admin');
+        return $this->hasRole('admin') || $this->hasRole('super_admin');
     }
 
     public function isGuru()
@@ -128,7 +128,7 @@ class User extends Authenticatable
                             \App\Models\Guru::create([
                                 'user_id'        => $user->id,
                                 'nama'           => $user->name,
-                                'nip'            => 'NIP-' . time() . '-' . rand(10, 99),
+                                'nip'            => 'NIP-' . str_replace('.', '', microtime(true)) . '-' . rand(1000, 9999),
                                 'jenis_kelamin'  => 'L',
                                 'password_plain' => $user->password_plain ?? 'password123',
                                 'is_aktif'       => true,
@@ -142,7 +142,7 @@ class User extends Authenticatable
                             \App\Models\Siswa::create([
                                 'user_id'       => $user->id,
                                 'nama'          => $user->name,
-                                'nis'           => 'NIS-' . time() . '-' . rand(10, 99),
+                                'nis'           => 'NIS-' . str_replace('.', '', microtime(true)) . '-' . rand(1000, 9999),
                                 'jenis_kelamin' => 'L',
                                 'kelas_id'      => $defaultKelas ? $defaultKelas->id : null,
                                 'status'        => 'Aktif',

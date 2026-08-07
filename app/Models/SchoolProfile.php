@@ -28,5 +28,16 @@ class SchoolProfile extends Model
         'stempel_path',
         'tanda_tangan_path',
         'theme_mode',
+        'jadwal_shalat_kota',
+        'kutipan_teks',
+        'kutipan_sumber',
+        'counter_siswa',
+        'counter_guru',
+        'counter_ekskul',
+        'counter_penghargaan',
+        'keunggulan_json',
+        'visi',
+        'misi',
+        'deskripsi_singkat',
     ];
 }

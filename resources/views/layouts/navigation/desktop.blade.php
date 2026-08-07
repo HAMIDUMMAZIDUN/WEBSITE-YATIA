@@ -116,8 +116,8 @@
             </div>
 
             {{-- Group: Kesiswaan --}}
-            <div x-show="sidebarOpen" x-data="{ open: {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*') || request()->routeIs('admin.siswa.history') ? 'true' : 'false' }} }" class="space-y-1">
-                <button @click="open = !open" class="flex items-center justify-between w-full rounded-xl text-xs font-semibold transition-all duration-200 gap-3 px-3 py-2.5 {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*') || request()->routeIs('admin.siswa.history') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450 border border-emerald-100/50 dark:border-emerald-900/30' : 'text-slate-655 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent' }}">
+            <div x-show="sidebarOpen" x-data="{ open: {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*', 'admin.ppdb.*') || request()->routeIs('admin.siswa.history') ? 'true' : 'false' }} }" class="space-y-1">
+                <button @click="open = !open" class="flex items-center justify-between w-full rounded-xl text-xs font-semibold transition-all duration-200 gap-3 px-3 py-2.5 {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*', 'admin.ppdb.*') || request()->routeIs('admin.siswa.history') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450 border border-emerald-100/50 dark:border-emerald-900/30' : 'text-slate-655 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent' }}">
                     <div class="flex items-center gap-3">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -129,6 +129,7 @@
                     </svg>
                 </button>
                 <div x-show="open" class="pl-7 pr-1 space-y-1">
+                    <a href="{{ route('admin.ppdb.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.ppdb.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">PPDB (Penerimaan Siswa Baru)</a>
                     <a href="{{ route('admin.pindah_kelas.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.pindah_kelas.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Pindah Kelas</a>
                     <a href="{{ route('admin.naik_kelas.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.naik_kelas.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Naik Kelas Massal</a>
                     <a href="{{ route('admin.alumni.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.alumni.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Direktori Alumni</a>
@@ -185,42 +186,7 @@
             </div>
         @endif
 
-        @if(Auth::user()->isSuperAdmin())
-            {{-- Group: Website & Publikasi --}}
-            <div x-show="sidebarOpen" x-data="{ open: {{ request()->routeIs('admin.publikasi.*') ? 'true' : 'false' }} }" class="space-y-1">
-                <button @click="open = !open" class="flex items-center justify-between w-full rounded-xl text-xs font-semibold transition-all duration-200 gap-3 px-3 py-2.5 {{ request()->routeIs('admin.publikasi.*') ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450 border border-emerald-100/50 dark:border-emerald-900/30' : 'text-slate-655 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent' }}">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                        </svg>
-                        <span>Website & Publikasi</span>
-                    </div>
-                    <svg class="w-3.5 h-3.5 transform transition-transform duration-205" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div x-show="open" class="pl-7 pr-1 space-y-1">
-                    <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Umum']) }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.berita.*') && request('category', 'Umum') === 'Umum') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Berita</a>
-                    <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Akademik']) }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.berita.*') && request('category') === 'Akademik') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Pengumuman</a>
-                    <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Agenda']) }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.berita.*') && request('category') === 'Agenda') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Agenda</a>
-                    <a href="{{ route('admin.publikasi.galeri.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.galeri.*') && !request('sub')) ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Galeri</a>
-                    <a href="{{ route('admin.publikasi.galeri.index', ['sub' => 'video']) }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.galeri.*') && request('sub') === 'video') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Video</a>
-                    <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Dokumen']) }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ (request()->routeIs('admin.publikasi.berita.*') && request('category') === 'Dokumen') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Dokumen</a>
-                    <a href="{{ route('admin.publikasi.banner.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.publikasi.banner.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Banner</a>
-                    <a href="{{ route('admin.publikasi.medsos.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('admin.publikasi.medsos.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Media Sosial</a>
-                </div>
-            </div>
 
-            {{-- Group: Manajemen Pengguna --}}
-            <div x-show="sidebarOpen" class="space-y-1">
-                <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 w-full rounded-xl text-xs font-semibold transition-all duration-200 px-3 py-2.5 {{ request()->routeIs('admin.users.*') ? 'active-stabilo' : 'text-slate-655 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <span>Manajemen Pengguna</span>
-                </a>
-            </div>
-        @endif
 
         {{-- Group: Wali Kelas --}}
         @if(Auth::user()->isWaliKelas())
@@ -267,6 +233,7 @@
                     <a href="{{ route('guru.elearning.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('guru.elearning.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">E-learning Modul</a>
                     <a href="{{ route('guru.nilai.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('guru.nilai.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Input Nilai Siswa</a>
                     <a href="{{ route('guru.cbt.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('guru.cbt.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">CBT & Bank Soal</a>
+                    <a href="{{ route('guru.tahfidz.index') }}" class="block px-3 py-2 rounded-lg text-[11px] font-semibold {{ request()->routeIs('guru.tahfidz.*') ? 'active-stabilo' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800' }}">Setoran Tahfidz</a>
                 </div>
             </div>
         @endif
@@ -351,9 +318,10 @@
 
                 {{-- Group: Kesiswaan --}}
                 <div class="group relative flex justify-center py-1">
-                    <span class="p-2 border rounded-xl block cursor-default {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*') || request()->routeIs('admin.siswa.history') ? 'active-stabilo' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-660 dark:text-slate-400' }}">🎓</span>
+                    <span class="p-2 border rounded-xl block cursor-default {{ request()->routeIs('admin.pindah_kelas.*', 'admin.naik_kelas.*', 'admin.alumni.*', 'admin.absensi.*', 'bk.triase.*', 'bk.pelanggaran.*', 'admin.ppdb.*') || request()->routeIs('admin.siswa.history') ? 'active-stabilo' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-660 dark:text-slate-400' }}">🎓</span>
                     <div class="absolute left-full ml-2 py-2 px-3 bg-slate-900 text-white text-xs rounded-xl shadow-xl hidden group-hover:block whitespace-nowrap z-50 space-y-1">
                         <span class="font-bold text-[10px] uppercase text-emerald-400 block border-b border-slate-800 pb-1 mb-1">Kesiswaan</span>
+                        <a href="{{ route('admin.ppdb.index') }}" class="block hover:text-emerald-300">PPDB Baru</a>
                         <a href="{{ route('admin.pindah_kelas.index') }}" class="block hover:text-emerald-300">Pindah Kelas</a>
                         <a href="{{ route('admin.naik_kelas.index') }}" class="block hover:text-emerald-300">Naik Kelas Massal</a>
                         <a href="{{ route('admin.alumni.index') }}" class="block hover:text-emerald-300">Direktori Alumni</a>
@@ -392,33 +360,7 @@
                 </div>
             @endif
 
-            @if(Auth::user()->isSuperAdmin())
-                {{-- Group: Website & Publikasi --}}
-                <div class="group relative flex justify-center py-1">
-                    <span class="p-2 border rounded-xl block cursor-default {{ request()->routeIs('admin.publikasi.*') ? 'active-stabilo' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-660 dark:text-slate-400' }}">📢</span>
-                    <div class="absolute left-full ml-2 py-2 px-3 bg-slate-900 text-white text-xs rounded-xl shadow-xl hidden group-hover:block whitespace-nowrap z-50 space-y-1">
-                        <span class="font-bold text-[10px] uppercase text-emerald-400 block border-b border-slate-800 pb-1 mb-1">Website & Publikasi</span>
-                        <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Umum']) }}" class="block hover:text-emerald-300">Berita</a>
-                        <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Akademik']) }}" class="block hover:text-emerald-300">Pengumuman</a>
-                        <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Agenda']) }}" class="block hover:text-emerald-300">Agenda</a>
-                        <a href="{{ route('admin.publikasi.galeri.index') }}" class="block hover:text-emerald-300">Galeri</a>
-                        <a href="{{ route('admin.publikasi.galeri.index', ['sub' => 'video']) }}" class="block hover:text-emerald-300">Video</a>
-                        <a href="{{ route('admin.publikasi.berita.index', ['category' => 'Dokumen']) }}" class="block hover:text-emerald-300">Dokumen</a>
-                        <a href="{{ route('admin.publikasi.banner.index') }}" class="block hover:text-emerald-300">Banner</a>
-                        <a href="{{ route('admin.publikasi.medsos.index') }}" class="block hover:text-emerald-300">Media Sosial</a>
-                    </div>
-                </div>
 
-                {{-- Group: Manajemen Pengguna --}}
-                <div class="group relative flex justify-center py-1">
-                    <a href="{{ route('admin.users.index') }}" class="p-2 border rounded-xl block {{ request()->routeIs('admin.users.*') ? 'active-stabilo' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    </a>
-                    <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">Manajemen Pengguna</span>
-                </div>
-            @endif
 
             {{-- Wali Kelas collapsed mode --}}
             @if(Auth::user()->isWaliKelas())
@@ -445,6 +387,7 @@
                         <a href="{{ route('guru.elearning.index') }}" class="block hover:text-emerald-300">E-learning Modul</a>
                         <a href="{{ route('guru.nilai.index') }}" class="block hover:text-emerald-300">Input Nilai Siswa</a>
                         <a href="{{ route('guru.cbt.index') }}" class="block hover:text-emerald-300">CBT & Bank Soal</a>
+                        <a href="{{ route('guru.tahfidz.index') }}" class="block hover:text-emerald-300">Setoran Tahfidz</a>
                     </div>
                 </div>
             @endif

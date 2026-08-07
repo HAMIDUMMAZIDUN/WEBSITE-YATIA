@@ -57,4 +57,9 @@ class Siswa extends Model
     {
         return $this->hasMany(PromotionDecision::class, 'student_id');
     }
+
+    public function tahfidzRecords()
+    {
+        return $this->hasMany(TahfidzRecord::class);
+    }
 }

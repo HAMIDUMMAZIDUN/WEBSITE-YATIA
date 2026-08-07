@@ -117,6 +117,10 @@
                     <textarea name="content" rows="6" required placeholder="Tuliskan berita lengkap..." class="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 resize-none"></textarea>
                 </div>
                 <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Link Instagram / YouTube / Embed Video</label>
+                    <input type="url" name="embed_link" placeholder="https://instagram.com/p/... atau https://youtube.com/watch?v=..." class="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Gambar Sampul</label>
                     <input type="file" name="image" class="w-full text-xs text-slate-500">
                 </div>
@@ -168,6 +172,10 @@
                     <textarea name="content" id="edit-content" rows="6" required class="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 resize-none"></textarea>
                 </div>
                 <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Link Instagram / YouTube / Embed Video</label>
+                    <input type="url" name="embed_link" id="edit-embed_link" placeholder="https://instagram.com/p/... atau https://youtube.com/watch?v=..." class="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Gambar Sampul (Biarkan kosong jika tidak ingin mengubah)</label>
                     <input type="file" name="image" class="w-full text-xs text-slate-500">
                 </div>
@@ -189,6 +197,7 @@
             document.getElementById('edit-title').value = article.title;
             document.getElementById('edit-category').value = article.category;
             document.getElementById('edit-content').value = article.content;
+            document.getElementById('edit-embed_link').value = article.embed_link || '';
             
             // Format published_at for datetime-local input
             let pubDate = new Date(article.published_at);

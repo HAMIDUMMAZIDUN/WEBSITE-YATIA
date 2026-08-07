@@ -34,6 +34,9 @@
                 <button @click="activeTab = 'ma'" :class="activeTab === 'ma' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:bg-slate-50'" class="flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all text-center">
                     Unit Madrasah Aliyah (MA)
                 </button>
+                <button @click="activeTab = 'landing'" :class="activeTab === 'landing' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:bg-slate-50'" class="flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all text-center">
+                    Landing Page (Website)
+                </button>
             </div>
 
             <!-- Form -->
@@ -185,6 +188,96 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tab Content: Landing Page Settings -->
+                <div x-show="activeTab === 'landing'" class="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm space-y-6" style="display: none;">
+                    <div class="border-b border-slate-100 pb-4 mb-4">
+                        <h3 class="text-lg font-bold text-slate-800">Pengaturan Landing Page (Website)</h3>
+                        <p class="text-xs text-slate-500">Sesuaikan kutipan, statistik, visi, misi, deskripsi, dan jadwal shalat untuk halaman depan.</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Visi & Misi & Deskripsi -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Deskripsi Singkat Madrasah</label>
+                            <textarea name="deskripsi_singkat" rows="3" placeholder="Deskripsi singkat yang tampil di section profil/tentang kami..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">{{ $profile->deskripsi_singkat }}</textarea>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Visi Madrasah</label>
+                            <textarea name="visi" rows="3" placeholder="Visi Madrasah..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">{{ $profile->visi }}</textarea>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Misi Madrasah</label>
+                            <textarea name="misi" rows="3" placeholder="Misi Madrasah (Gunakan baris baru untuk setiap poin)..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">{{ $profile->misi }}</textarea>
+                        </div>
+
+                        <!-- Jadwal Shalat & Kutipan -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kota/Wilayah Jadwal Shalat</label>
+                            <input type="text" name="jadwal_shalat_kota" value="{{ $profile->jadwal_shalat_kota }}" placeholder="Contoh: DKI Jakarta & Sekitarnya" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sumber Kutipan Hari Ini</label>
+                            <input type="text" name="kutipan_sumber" value="{{ $profile->kutipan_sumber }}" placeholder="Contoh: QS. Al-Mujadilah: 11" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Teks Kutipan Hari Ini</label>
+                            <textarea name="kutipan_teks" rows="2" placeholder="Teks kutipan Islami..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">{{ $profile->kutipan_teks }}</textarea>
+                        </div>
+
+                        <!-- Statistik Counters -->
+                        <div class="md:col-span-2 border-t border-slate-100 pt-6">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4">Statistik Keberhasilan Madrasah (Counters)</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Siswa</label>
+                                    <input type="text" name="counter_siswa" value="{{ $profile->counter_siswa }}" placeholder="Contoh: 850+" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Guru & Staf</label>
+                                    <input type="text" name="counter_guru" value="{{ $profile->counter_guru }}" placeholder="Contoh: 45+" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kegiatan Ekskul</label>
+                                    <input type="text" name="counter_ekskul" value="{{ $profile->counter_ekskul }}" placeholder="Contoh: 18+" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Penghargaan</label>
+                                    <input type="text" name="counter_penghargaan" value="{{ $profile->counter_penghargaan }}" placeholder="Contoh: 35+" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Keunggulan & Program Prioritas -->
+                        @php
+                            $keunggulan_data = json_decode($profile->keunggulan_json, true) ?? [
+                                ['title' => 'Program Tahfidz Qur\'an', 'desc' => 'Target hafalan terstruktur dibimbing oleh asatidzah berkompeten untuk mencetak hafizh/hafizhah.'],
+                                ['title' => 'Fasilitas Lengkap', 'desc' => 'Ruang kelas ber-AC, laboratorium komputer modern, perpustakaan digital, serta sarana olahraga.'],
+                                ['title' => 'Ekstrakurikuler Berprestasi', 'desc' => 'Mengembangkan bakat siswa melalui Pramuka, Robotik, Seni Kaligrafi, Hadrah, Futsal, dan OSN.'],
+                                ['title' => 'Kurikulum Terpadu', 'desc' => 'Integrasi antara Kurikulum Nasional (Merdeka) dengan nilai-nilai kepesantrenan dan akhlakul karimah.']
+                            ];
+                        @endphp
+                        <div class="md:col-span-2 border-t border-slate-100 pt-6">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4">4 Keunggulan & Program Prioritas</h4>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                @for($i = 0; $i < 4; $i++)
+                                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-150 space-y-4">
+                                        <h5 class="text-xs font-bold text-emerald-600 uppercase">Keunggulan #{{ $i + 1 }}</h5>
+                                        <div class="space-y-2">
+                                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Judul Keunggulan</label>
+                                            <input type="text" name="keunggulan[{{ $i }}][title]" value="{{ $keunggulan_data[$i]['title'] ?? '' }}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Deskripsi Singkat</label>
+                                            <textarea name="keunggulan[{{ $i }}][desc]" rows="2" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500">{{ $keunggulan_data[$i]['desc'] ?? '' }}</textarea>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Mandatory Audit Log Input -->
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 space-y-3">

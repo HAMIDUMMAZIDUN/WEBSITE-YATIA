@@ -11,6 +11,7 @@ class Article extends Model
         'content',
         'category',
         'image_path',
+        'embed_link',
         'published_at',
     ];
 

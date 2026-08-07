@@ -160,6 +160,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/data/export/{type}', [DashboardController::class, 'exportData'])->name('data.export');
     Route::get('/data/template/{type}', [DashboardController::class, 'downloadTemplate'])->name('data.template');
     Route::post('/data/import/{type}', [DashboardController::class, 'importData'])->name('data.import');
+
+    // PPDB (Penerimaan Peserta Didik Baru) Routes
+    Route::get('/admin/ppdb', [\App\Http\Controllers\PpdbController::class, 'index'])->name('admin.ppdb.index');
+    Route::post('/admin/ppdb', [\App\Http\Controllers\PpdbController::class, 'store'])->name('admin.ppdb.store');
+    Route::patch('/admin/ppdb/{id}/status', [\App\Http\Controllers\PpdbController::class, 'updateStatus'])->name('admin.ppdb.update_status');
+    Route::post('/admin/ppdb/{id}/migrate', [\App\Http\Controllers\PpdbController::class, 'migrateToSiswa'])->name('admin.ppdb.migrate');
+    Route::delete('/admin/ppdb/{id}', [\App\Http\Controllers\PpdbController::class, 'destroy'])->name('admin.ppdb.delete');
+
+    // Tahfidz (Setoran Hafalan Qur'an) Routes
+    Route::get('/guru/tahfidz', [\App\Http\Controllers\TahfidzController::class, 'index'])->name('guru.tahfidz.index');
+    Route::post('/guru/tahfidz', [\App\Http\Controllers\TahfidzController::class, 'store'])->name('guru.tahfidz.store');
 });
 
 require __DIR__.'/auth.php';

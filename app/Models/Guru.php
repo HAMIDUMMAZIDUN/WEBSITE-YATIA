@@ -37,4 +37,9 @@ class Guru extends Model
     {
         return $this->hasMany(PelanggaranBk::class, 'guru_bk_id');
     }
+
+    public function tahfidzRecords()
+    {
+        return $this->hasMany(TahfidzRecord::class);
+    }
 }

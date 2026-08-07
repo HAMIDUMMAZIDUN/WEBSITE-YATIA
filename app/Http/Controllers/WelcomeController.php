@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Gallery;
 use App\Models\SocialMedia;
 use App\Models\Banner;
+use App\Models\SchoolProfile;
 use Illuminate\Http\Request;
 
 class WelcomeController extends Controller
@@ -22,7 +23,8 @@ class WelcomeController extends Controller
             ->get();
         $galleries = Gallery::latest()->take(8)->get();
         $socials = SocialMedia::where('is_active', true)->get();
+        $profile = SchoolProfile::firstOrCreate(['id' => 1]);
 
-        return view('welcome', compact('banners', 'articles', 'galleries', 'socials'));
+        return view('welcome', compact('banners', 'articles', 'galleries', 'socials', 'profile'));
     }
 }

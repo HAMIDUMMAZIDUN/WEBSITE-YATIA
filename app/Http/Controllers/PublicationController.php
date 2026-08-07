@@ -40,6 +40,7 @@ class PublicationController extends Controller
             'content' => 'required|string',
             'category' => 'required|in:Akademik,Prestasi,Agenda,Umum',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'embed_link' => 'nullable|url|max:255',
             'published_at' => 'required|date',
         ]);
 
@@ -56,6 +57,7 @@ class PublicationController extends Controller
             'content' => $request->content,
             'category' => $request->category,
             'image_path' => $imagePath,
+            'embed_link' => $request->embed_link,
             'published_at' => $request->published_at,
         ]);
 
@@ -82,6 +84,7 @@ class PublicationController extends Controller
             'content' => 'required|string',
             'category' => 'required|in:Akademik,Prestasi,Agenda,Umum',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'embed_link' => 'nullable|url|max:255',
             'published_at' => 'required|date',
         ]);
 
@@ -100,6 +103,7 @@ class PublicationController extends Controller
         $article->title = $request->title;
         $article->content = $request->content;
         $article->category = $request->category;
+        $article->embed_link = $request->embed_link;
         $article->published_at = $request->published_at;
         $article->save();
 

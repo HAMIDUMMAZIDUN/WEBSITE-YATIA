@@ -32,10 +32,10 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isAdmin()) {
-            return $this->superAdminDashboard($request);
-        } elseif ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return redirect()->route('admin.users.index');
+        } elseif ($user->isAdmin()) {
+            return $this->superAdminDashboard($request);
         } elseif ($user->isWaliKelas()) {
             return $this->waliKelasDashboard();
         } elseif ($user->isGuru()) {
@@ -480,6 +480,25 @@ class DashboardController extends Controller
         ]);
 
         $guru = Auth::user()->guru;
+        if (!$guru) {
+            return redirect()->back()->withErrors(['error' => 'Detail guru tidak ditemukan.']);
+        }
+
+        // Conflict check
+        $conflict = JadwalPelajaran::where('guru_id', $guru->id)
+            ->where('hari', $request->hari)
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('jam_mulai', '<', $request->jam_selesai)
+                      ->where('jam_selesai', '>', $request->jam_mulai);
+                });
+            })
+            ->exists();
+
+        if ($conflict) {
+            return redirect()->back()->withErrors(['conflict' => 'Jadwal bentrok! Anda sudah memiliki jadwal mengajar lain pada hari dan jam tersebut.']);
+        }
+
         JadwalPelajaran::create([
             'guru_id'          => $guru->id,
             'kelas_id'         => $request->kelas_id,
@@ -566,7 +585,27 @@ class DashboardController extends Controller
             'jam_mulai'         => 'required|date_format:H:i',
             'jam_selesai'       => 'required|date_format:H:i|after:jam_mulai',
         ]);
-        JadwalPelajaran::findOrFail($id)->update($request->only([
+
+        $jadwal = JadwalPelajaran::findOrFail($id);
+        $guruId = $jadwal->guru_id;
+
+        // Conflict check excluding current schedule ID
+        $conflict = JadwalPelajaran::where('guru_id', $guruId)
+            ->where('id', '!=', $id)
+            ->where('hari', $request->hari)
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('jam_mulai', '<', $request->jam_selesai)
+                      ->where('jam_selesai', '>', $request->jam_mulai);
+                });
+            })
+            ->exists();
+
+        if ($conflict) {
+            return redirect()->back()->withErrors(['conflict' => 'Jadwal bentrok! Guru tersebut sudah memiliki jadwal mengajar lain pada hari dan jam tersebut.']);
+        }
+
+        $jadwal->update($request->only([
             'kelas_id','mata_pelajaran_id','hari','jam_mulai','jam_selesai'
         ]));
         return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
@@ -2069,10 +2108,25 @@ class DashboardController extends Controller
             'stempel' => 'nullable|image|max:2048',
             'tanda_tangan' => 'nullable|image|max:2048',
             'alasan_perubahan' => 'required|string|min:5',
+            'deskripsi_singkat' => 'nullable|string',
+            'visi' => 'nullable|string',
+            'misi' => 'nullable|string',
+            'jadwal_shalat_kota' => 'nullable|string|max:255',
+            'kutipan_sumber' => 'nullable|string|max:255',
+            'kutipan_teks' => 'nullable|string',
+            'counter_siswa' => 'nullable|string|max:50',
+            'counter_guru' => 'nullable|string|max:50',
+            'counter_ekskul' => 'nullable|string|max:50',
+            'counter_penghargaan' => 'nullable|string|max:50',
+            'keunggulan' => 'nullable|array',
         ]);
 
         $oldData = $profile->toArray();
-        $data = $request->except(['logo', 'stempel', 'tanda_tangan', 'alasan_perubahan']);
+        $data = $request->except(['logo', 'stempel', 'tanda_tangan', 'alasan_perubahan', 'keunggulan']);
+
+        if ($request->has('keunggulan')) {
+            $data['keunggulan_json'] = json_encode($request->input('keunggulan'));
+        }
 
         // Handle File Uploads
         if ($request->hasFile('logo')) {
